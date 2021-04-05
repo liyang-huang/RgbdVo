@@ -69,6 +69,21 @@ def buildPyramidCloud(pyramidDepth, cameraMatrix):
 
     return pyramidCloud
 
+def normalComputer(cloud):
+    row, col, _ = np.shape(cloud)
+    for y in range(row-1):
+        for x in range(col-1):
+            du = cloud[y][x+1]- cloud[y][x]
+            dv = cloud[y+1][x]- cloud[y][x]
+            print(du)
+            print(cloud[y][x+1])
+            print(cloud[y][x])
+            exit()
+
+
+def buildPyramidNormal(pyramidCloud, cameraMatrix):
+    normals = normalComputer(pyramidCloud[0])
+
 
 class Odometry:
     def __init__(self, odometryType):
@@ -91,6 +106,8 @@ class Odometry:
 
         self.pyramidCloudSrc = buildPyramidCloud(self.pyramidDepthSrc, self.cameraMatrix)
         self.pyramidCloudDst = buildPyramidCloud(self.pyramidDepthDst, self.cameraMatrix)
+
+        self.pyramidNormalSrc = buildPyramidNormal(self.pyramidCloudSrc, self.cameraMatrix)
 
         print(self.pyramidCloudSrc[0])
         print(np.shape(self.pyramidCloudSrc[0]))

@@ -4,6 +4,8 @@ import cv2 as cv
 from dataclasses import dataclass
 import math
 
+#np.set_printoptions(threshold=np.inf)
+
 @dataclass
 class RgbdFrame:
     image: np.array
@@ -70,20 +72,33 @@ def buildPyramidCloud(pyramidDepth, cameraMatrix):
     return pyramidCloud
 
 def normalComputer(cloud):
-    row, col, _ = np.shape(cloud)
-    for y in range(row-1):
-        for x in range(col-1):
-            du = cloud[y][x+1]- cloud[y][x]
-            dv = cloud[y+1][x]- cloud[y][x]
-            print(du)
-            print(cloud[y][x+1])
-            print(cloud[y][x])
-            exit()
+    row, col, ch = np.shape(cloud)
+    ori = cloud[0:-1, 0:-1, :] 
+    x_shift = cloud[0:-1, 1:, :]
+    y_shift = cloud[1:, 0:-1, :]
+    du = x_shift - ori
+    dv = y_shift - ori
+    cloud_cross = np.cross(du,dv)
+    norm = np.linalg.norm(cloud_cross, axis=2)
+    norms = np.repeat(norm[:, :, np.newaxis], 3, axis=2)
+    normals = cloud_cross / norms 
+    normals = np.pad(normals , ((0,1),(0,1),(0,0)), 'constant', constant_values = (0,0))
 
+    return normals
 
-def buildPyramidNormal(pyramidCloud, cameraMatrix):
+def buildPyramidNormal(pyramidCloud):
     normals = normalComputer(pyramidCloud[0])
+    level = len(pyramidCloud)
+    pyramidNormal = buildPyramidImage(normals, level-1)
 
+    # renormalize normals
+    for i in range(level-1):
+        currNormal = pyramidNormal[i+1]
+        currNorm = np.linalg.norm(currNormal, axis=2)
+        currNorms = np.repeat(currNorm[:, :, np.newaxis], 3, axis=2)
+        pyramidNormal[i+1] = currNormal / currNorms 
+
+    return pyramidNormal
 
 class Odometry:
     def __init__(self, odometryType):
@@ -98,7 +113,7 @@ class Odometry:
     def compute(self, srcImage, srcDepth, srcMask, dstImage, dstDepth, dstMask):
         self.setDefaultIterCounts()
         levelCount = len(self.iterCounts)-1
-        print(levelCount)
+        print('#level',levelCount)
         self.pyramidImageSrc = buildPyramidImage(srcImage, levelCount)
         self.pyramidImageDst = buildPyramidImage(dstImage, levelCount)
         self.pyramidDepthSrc = buildPyramidImage(srcDepth, levelCount)
@@ -107,7 +122,7 @@ class Odometry:
         self.pyramidCloudSrc = buildPyramidCloud(self.pyramidDepthSrc, self.cameraMatrix)
         self.pyramidCloudDst = buildPyramidCloud(self.pyramidDepthDst, self.cameraMatrix)
 
-        self.pyramidNormalSrc = buildPyramidNormal(self.pyramidCloudSrc, self.cameraMatrix)
+        self.pyramidNormalDst = buildPyramidNormal(self.pyramidCloudDst)
 
         print(self.pyramidCloudSrc[0])
         print(np.shape(self.pyramidCloudSrc[0]))

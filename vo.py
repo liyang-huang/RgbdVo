@@ -3,6 +3,7 @@ import numpy as np
 import cv2 as cv
 from dataclasses import dataclass
 import math
+import sophus as sp
 
 #np.set_printoptions(threshold=np.inf)
 
@@ -100,6 +101,86 @@ def buildPyramidNormal(pyramidCloud):
 
     return pyramidNormal
 
+def buildPyramidMask(pyramidDepth, minDepth, maxDepth, pyramidNormal):
+    pyramidMask = []
+    for i in range(len(pyramidDepth)):
+        levelDepth = pyramidDepth[i]
+        levelNormal = pyramidNormal[i]
+        #levelMask = (levelDepth > minDepth) and (levelDepth < maxDepth)
+        levelDepth = cv.patchNaNs(levelDepth, 0)
+        minMask = levelDepth < minDepth
+        maxMask = levelDepth > maxDepth
+        nanMask = np.logical_not(np.isnan(levelDepth))
+        levelMask = np.logical_or(levelDepth < minDepth, levelDepth > maxDepth)
+        levelMask = np.logical_or(levelMask, nanMask)
+
+        channelMask_0, channelMask_1, channelMask_2 = cv.split(levelNormal)
+        channelMask_0 = np.isnan(channelMask_0)
+        channelMask_1 = np.isnan(channelMask_1)
+        channelMask_2 = np.isnan(channelMask_2)
+        print(minMask)
+        print(maxMask)
+        print(nanMask)
+        print(levelMask)
+        print(levelNormal)
+        print(np.shape(levelNormal))
+        print(channelMask_0)
+        print(np.shape(channelMask_0))
+        print(validNormalMask)
+        print(np.shape(validNormalMask))
+        exit()
+
+def BA_GN(p3d, p2d, K, it, pose):
+    fx = K.fx
+    fy = K.fy
+    cx = K.cx
+    cy = K.cy
+    last_cost = 0
+    for i in range(it):
+        H = np.zeros((6,6))
+        b = np.zeros((6,))
+        cost = 0
+        for j in range(np.shape(p3d)[0]):
+            p3d_c = pose * p3d[j]
+            z_inv = 1.0 / p3d_c[2]
+            z2_inv = z_inv * z_inv
+            px = fx * p3d_c[0] / p3d_c[2] + cx
+            py = fy * p3d_c[1] / p3d_c[2] + cy
+            proj = np.array([px, py])
+            reproj_error = proj - p2d[j]
+            cost = cost + np.linalg.norm(reproj_error)
+            J = np.zeros((2,6))
+            J[0][0] = -fx * z_inv
+            J[0][1] = 0
+            J[0][2] = fx * p3d_c[0] * z2_inv
+            J[0][3] = fx * p3d_c[0] * p3d_c[1] * z2_inv
+            J[0][4] = -fx - fx * p3d_c[0] * p3d_c[0] * z2_inv
+            J[0][5] = fx * p3d_c[1] * z_inv
+            J[1][0] = 0
+            J[1][1] = -fy * z_inv
+            J[1][2] = fy * p3d_c[1] * z2_inv
+            J[1][3] = fy + fy * p3d_c[1] * p3d_c[1] * z2_inv
+            J[1][4] = -fy * p3d_c[0] * p3d_c[1] * z2_inv
+            J[1][5] = -fy * p3d_c[0] * z_inv
+            H = H + J.transpose() @ J
+            b = b - J.transpose() @ reproj_error
+
+        dx = np.linalg.solve(H, b)
+        print('dx:',dx)
+        print('exp dx:',sp.SE3.exp(dx))
+        print('Cost:',cost)
+        if(np.isnan(dx[0])):
+            print('NaN~~~')
+            exit()
+        if(i>0 and cost>last_cost):
+            print('early terminate!!!  iter:',i)
+            break
+
+        pose = sp.SE3.exp(dx) * pose
+        last_cost = cost
+
+    return pose
+
 class Odometry:
     def __init__(self, odometryType):
         self.odometryType = odometryType
@@ -107,8 +188,12 @@ class Odometry:
     def setDefaultIterCounts(self):
         self.iterCounts = [7, 7, 7, 10]
 
-    def setCameraMatrix(self,cameraMatrix):
+    def setCameraMatrix(self, cameraMatrix):
         self.cameraMatrix = cameraMatrix
+
+    def setDepthThreshold(self, minDepth, maxDepth):
+        self.minDepth = minDepth
+        self.maxDepth = maxDepth
 
     def compute(self, srcImage, srcDepth, srcMask, dstImage, dstDepth, dstMask):
         self.setDefaultIterCounts()
@@ -124,12 +209,12 @@ class Odometry:
 
         self.pyramidNormalDst = buildPyramidNormal(self.pyramidCloudDst)
 
+        
+        self.pyramidMaskDst = buildPyramidMask(self.pyramidDepthDst, self.minDepth, self.maxDepth, self.pyramidNormalDst)
+
         print(self.pyramidCloudSrc[0])
         print(np.shape(self.pyramidCloudSrc[0]))
         exit()
-
-
-
 
 if __name__ == '__main__':
 
@@ -167,6 +252,7 @@ if __name__ == '__main__':
     cameraMatrix[1][2] = cy 
     odometry.setCameraMatrix(cameraMatrix)
     odometry2.setCameraMatrix(cameraMatrix)
+    odometry2.setDepthThreshold(10,100)
 
     Rts = []
     timestamps = []

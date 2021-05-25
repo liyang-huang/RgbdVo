@@ -4,6 +4,7 @@ import cv2 as cv
 from dataclasses import dataclass
 import math
 import sophus as sp
+from scipy.spatial.transform import Rotation as R
 
 #np.set_printoptions(threshold=np.inf)
 
@@ -130,60 +131,13 @@ def buildPyramidMask(pyramidDepth, minDepth, maxDepth, pyramidNormal):
         print(np.shape(validNormalMask))
         exit()
 
-def BA_GN(p3d, p2d, K, it, pose):
-    fx = K.fx
-    fy = K.fy
-    cx = K.cx
-    cy = K.cy
-    last_cost = 0
-    for i in range(it):
-        H = np.zeros((6,6))
-        b = np.zeros((6,))
-        cost = 0
-        for j in range(np.shape(p3d)[0]):
-            p3d_c = pose * p3d[j]
-            z_inv = 1.0 / p3d_c[2]
-            z2_inv = z_inv * z_inv
-            px = fx * p3d_c[0] / p3d_c[2] + cx
-            py = fy * p3d_c[1] / p3d_c[2] + cy
-            proj = np.array([px, py])
-            reproj_error = proj - p2d[j]
-            cost = cost + np.linalg.norm(reproj_error)
-            J = np.zeros((2,6))
-            J[0][0] = -fx * z_inv
-            J[0][1] = 0
-            J[0][2] = fx * p3d_c[0] * z2_inv
-            J[0][3] = fx * p3d_c[0] * p3d_c[1] * z2_inv
-            J[0][4] = -fx - fx * p3d_c[0] * p3d_c[0] * z2_inv
-            J[0][5] = fx * p3d_c[1] * z_inv
-            J[1][0] = 0
-            J[1][1] = -fy * z_inv
-            J[1][2] = fy * p3d_c[1] * z2_inv
-            J[1][3] = fy + fy * p3d_c[1] * p3d_c[1] * z2_inv
-            J[1][4] = -fy * p3d_c[0] * p3d_c[1] * z2_inv
-            J[1][5] = -fy * p3d_c[0] * z_inv
-            H = H + J.transpose() @ J
-            b = b - J.transpose() @ reproj_error
 
-        dx = np.linalg.solve(H, b)
-        print('dx:',dx)
-        print('exp dx:',sp.SE3.exp(dx))
-        print('Cost:',cost)
-        if(np.isnan(dx[0])):
-            print('NaN~~~')
-            exit()
-        if(i>0 and cost>last_cost):
-            print('early terminate!!!  iter:',i)
-            break
-
-        pose = sp.SE3.exp(dx) * pose
-        last_cost = cost
-
-    return pose
 
 class Odometry:
     def __init__(self, odometryType):
         self.odometryType = odometryType
+        self.initial_pose = sp.SE3()
+        self.max_it = 100
     
     def setDefaultIterCounts(self):
         self.iterCounts = [7, 7, 7, 10]
@@ -215,6 +169,158 @@ class Odometry:
         print(self.pyramidCloudSrc[0])
         print(np.shape(self.pyramidCloudSrc[0]))
         exit()
+
+    def calc_residual(self, p3d, p2d, pose):
+        fx = self.cameraMatrix[0][0]
+        fy = self.cameraMatrix[1][1]
+        cx = self.cameraMatrix[0][2]
+        cy = self.cameraMatrix[1][2]
+        residuals = np.zeros(np.shape(p3d)[0])
+        res_std = []
+        for j in range(np.shape(p3d)[0]):
+            p3d_c = pose * p3d[j]
+            px = fx * p3d_c[0] / p3d_c[2] + cx
+            py = fy * p3d_c[1] / p3d_c[2] + cy
+            proj = np.array([px, py])
+            reproj_error = proj - p2d[j]
+            residuals[j] = np.linalg.norm(reproj_error)
+            if(np.isnan(p3d_c[2])==False):
+                res_std.append(np.linalg.norm(reproj_error))
+        return residuals, np.std(res_std)
+
+    def BA_GN(self, p3d, p2d, it, pose, robust=None):
+        fx = self.cameraMatrix[0][0]
+        fy = self.cameraMatrix[1][1]
+        cx = self.cameraMatrix[0][2]
+        cy = self.cameraMatrix[1][2]
+        last_cost = 0
+        res, res_std = self.calc_residual(p3d, p2d, pose)
+        huber_k = 1.345 * res_std
+        if (robust=='Huber'):
+            print('With Huber kernel')
+            weight = []
+            for i in res:
+                if (i<=huber_k):
+                    weight.append(1.0)
+                else:
+                    weight.append(huber_k/i)
+        else:
+            print('Without robust kernel')
+            weight = np.ones(len(res))
+        for i in range(it):
+            H = np.zeros((6,6))
+            b = np.zeros((6,))
+            cost = 0
+            for j in range(np.shape(p3d)[0]):
+                p3d_c = pose * p3d[j]
+                if(np.isnan(p3d_c[2])==False):
+                    z_inv = 1.0 / p3d_c[2]
+                    z2_inv = z_inv * z_inv
+                    px = fx * p3d_c[0] / p3d_c[2] + cx
+                    py = fy * p3d_c[1] / p3d_c[2] + cy
+                    proj = np.array([px, py])
+                    reproj_error = proj - p2d[j]
+                    #print('3d:',p3d_c)
+                    #print('proj 2d:',proj)
+                    #print('reproj:',reproj_error)
+                    #exit()
+                    cost = cost + np.linalg.norm(reproj_error)
+                    J = np.zeros((2,6))
+                    J[0][0] = -fx * z_inv
+                    J[0][1] = 0
+                    J[0][2] = fx * p3d_c[0] * z2_inv
+                    J[0][3] = fx * p3d_c[0] * p3d_c[1] * z2_inv
+                    J[0][4] = -fx - fx * p3d_c[0] * p3d_c[0] * z2_inv
+                    J[0][5] = fx * p3d_c[1] * z_inv
+                    J[1][0] = 0
+                    J[1][1] = -fy * z_inv
+                    J[1][2] = fy * p3d_c[1] * z2_inv
+                    J[1][3] = fy + fy * p3d_c[1] * p3d_c[1] * z2_inv
+                    J[1][4] = -fy * p3d_c[0] * p3d_c[1] * z2_inv
+                    J[1][5] = -fy * p3d_c[0] * z_inv
+                    H = H + J.transpose() @ (J * weight[j])
+                    b = b - J.transpose() @ (reproj_error * weight[j])
+
+            #print('H',H)
+            #print('b',b)
+            dx = np.linalg.solve(H, b)
+            print('iter:',i)
+            print('dx:',dx)
+            print('exp dx:',sp.SE3.exp(dx))
+            print('Cost:',cost)
+            if(np.isnan(dx[0])):
+                print('NaN~~~')
+                exit()
+            if(i>0 and cost>last_cost):
+                print('early terminate!!!  iter:',i)
+                break
+
+            pose = sp.SE3.exp(dx) * pose
+            last_cost = cost
+
+        return pose
+
+    def process_feature(self, img_pre, img_cur):
+        #img_pre = cv.undistort(img_pre, self.K, self.dist)
+        #img_cur = cv.undistort(img_cur, self.K, self.dist)
+        orb = cv.ORB_create()
+        kp_pre, des_pre = orb.detectAndCompute(img_pre,None)
+        kp_cur, des_cur = orb.detectAndCompute(img_cur,None)         
+        bf = cv.BFMatcher(cv.NORM_HAMMING)   
+        matches = bf.knnMatch(des_pre,des_cur,k=2)
+        gmatches = []
+        for m,n in matches:
+            if m.distance < 0.75*n.distance:
+                gmatches.append(m)
+        print('matchs:',len(gmatches))
+        points2D_pre = np.empty((0,2))
+        points2D_cur = np.empty((0,2))
+        kp_pre_match = []
+        kp_cur_match = []
+        for mat in gmatches:
+            pre_idx = mat.queryIdx
+            cur_idx = mat.trainIdx
+            points2D_pre = np.vstack((points2D_pre,np.array(kp_pre[pre_idx].pt)))
+            points2D_cur = np.vstack((points2D_cur,np.array(kp_cur[cur_idx].pt)))
+            kp_pre_match.append(kp_pre[pre_idx])
+            kp_cur_match.append(kp_cur[cur_idx])
+        return points2D_pre, points2D_cur, kp_pre_match, kp_cur_match
+
+    def compute_reproj(self, srcImage, srcDepth, srcMask, dstImage, dstDepth, dstMask):
+        points2D_pre, points2D_cur, kp_pre, kp_cur = self.process_feature(srcImage, dstImage)
+        fx = self.cameraMatrix[0][0]
+        fy = self.cameraMatrix[1][1]
+        cx = self.cameraMatrix[0][2]
+        cy = self.cameraMatrix[1][2]
+        #print(np.shape(points2D_cur))
+        #print(np.shape(kp_cur))
+        #print(type(points2D_cur))
+        points3D = []
+        for i, j in enumerate(points2D_pre):
+            #print(kp_pre[i].pt)
+            row = int(kp_pre[i].pt[1])
+            col = int(kp_pre[i].pt[0])
+            z = srcDepth[row][col]
+            p3d_x = (j[0]-cx)*z/fx
+            p3d_y = (j[1]-cy)*z/fy
+            p3d = np.array([p3d_x, p3d_y, z])
+            points3D.append(p3d)
+        points3D = np.array(points3D)
+        #print(np.shape(points3D))
+        #print('pre 2d:',points2D_pre[0])
+        #print('cur 2d:',points2D_cur[0])
+        #print('pre 3d:',points3D[0])
+        #BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, self.initial_pose)
+        #BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, sp.SE3())
+        BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, sp.SE3(), 'Huber')
+        #retval, rvec_est, tvec_est, inliers = cv.solvePnPRansac(points3D, points2D_cur, self.cameraMatrix, None)
+        #rvec_est =  R.from_rotvec(rvec_est.reshape(3,)).as_matrix()
+        #BA_pose = sp.SE3(rvec_est, tvec_est)
+        self.initial_pose = BA_pose
+        #return BA_pose.matrix()
+        return BA_pose.matrix()
+
+
 
 if __name__ == '__main__':
 
@@ -279,8 +385,9 @@ if __name__ == '__main__':
      
             if(len(Rts)!=0):
                 #res, Rt = odometry.compute(frame_curr.image, frame_curr.depth, frame_curr.mask, frame_prev.image, frame_prev.depth, frame_prev.mask)        
-                res, Rt = odometry.compute(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)        
-                odometry2.compute(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)
+                #res, Rt = odometry.compute(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)        
+                Rt = odometry2.compute_reproj(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)        
+                #odometry2.compute(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)
 
             if(len(Rts)==0):
                 Rts.append(np.eye(4,4))
@@ -296,6 +403,6 @@ if __name__ == '__main__':
             
             print('frame',tt)
             tt = tt+1
-            if (tt==2):
-                break
+            #if (tt==2):
+            #    break
     write_results(sys.argv[2], timestamps, Rts)

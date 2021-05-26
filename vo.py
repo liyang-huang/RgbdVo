@@ -182,7 +182,7 @@ class Odometry:
             px = fx * p3d_c[0] / p3d_c[2] + cx
             py = fy * p3d_c[1] / p3d_c[2] + cy
             proj = np.array([px, py])
-            reproj_error = proj - p2d[j]
+            reproj_error = p2d[j] - proj
             residuals[j] = np.linalg.norm(reproj_error)
             if(np.isnan(p3d_c[2])==False):
                 res_std.append(np.linalg.norm(reproj_error))
@@ -219,7 +219,7 @@ class Odometry:
                     px = fx * p3d_c[0] / p3d_c[2] + cx
                     py = fy * p3d_c[1] / p3d_c[2] + cy
                     proj = np.array([px, py])
-                    reproj_error = proj - p2d[j]
+                    reproj_error = p2d[j] - proj
                     #print('3d:',p3d_c)
                     #print('proj 2d:',proj)
                     #print('reproj:',reproj_error)
@@ -312,7 +312,8 @@ class Odometry:
         #print('pre 3d:',points3D[0])
         #BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, self.initial_pose)
         #BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, sp.SE3())
-        BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, sp.SE3(), 'Huber')
+        #BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, sp.SE3(), 'Huber')
+        BA_pose = self.BA_GN(points3D, points2D_cur, self.max_it, self.initial_pose, 'Huber')
         #retval, rvec_est, tvec_est, inliers = cv.solvePnPRansac(points3D, points2D_cur, self.cameraMatrix, None)
         #rvec_est =  R.from_rotvec(rvec_est.reshape(3,)).as_matrix()
         #BA_pose = sp.SE3(rvec_est, tvec_est)

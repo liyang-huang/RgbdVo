@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import math
 import sophus as sp
 from scipy.spatial.transform import Rotation as R
+from BundleAdjustment import BundleAdjustment
+import g2o
 
 #np.set_printoptions(threshold=np.inf)
 
@@ -14,6 +16,14 @@ class RgbdFrame:
     depth: np.array
     mask: np.array
     normals: np.array
+
+@dataclass
+class CameraParameter:
+    fx: float
+    fy: float
+    cx: float
+    cy: float
+    baseline: float=0.0
 
 def frame_copy(dst, src):
     dst.image = src.image.copy()
@@ -318,10 +328,40 @@ class Odometry:
         #rvec_est =  R.from_rotvec(rvec_est.reshape(3,)).as_matrix()
         #BA_pose = sp.SE3(rvec_est, tvec_est)
         self.initial_pose = BA_pose
-        #return BA_pose.matrix()
         return BA_pose.matrix()
 
+    def compute_reproj_g2o(self, srcImage, srcDepth, srcMask, dstImage, dstDepth, dstMask):
+        pose_pre = g2o.SE3Quat(sp.SE3().matrix()[:3,:3], sp.SE3().matrix()[:3,3])
+        pose_cur = g2o.SE3Quat(self.initial_pose.matrix()[:3,:3], self.initial_pose.matrix()[:3,3])
+        cam = CameraParameter(self.cameraMatrix[0][0], self.cameraMatrix[1][1], self.cameraMatrix[0][2], self.cameraMatrix[1][2])
+        BA = BundleAdjustment()
+        BA.add_pose(0, pose_pre, cam, fixed=True )
+        BA.add_pose(1, pose_cur, cam, fixed=False )
 
+        points2D_pre, points2D_cur, kp_pre, kp_cur = self.process_feature(srcImage, dstImage)
+        points3D = []
+        for i, j in enumerate(points2D_pre):
+            row = int(kp_pre[i].pt[1])
+            col = int(kp_pre[i].pt[0])
+            z = srcDepth[row][col]
+            p3d_x = (j[0]-cx)*z/fx
+            p3d_y = (j[1]-cy)*z/fy
+            p3d = np.array([p3d_x, p3d_y, z])
+            points3D.append(p3d)
+        points3D = np.array(points3D)
+
+        for i in range(np.shape(points3D)[0]):
+            p3d = points3D[i]
+            if(np.isnan(p3d[2])==False):
+                print(p3d)
+                BA.add_point(i, points3D[i], fixed=True)
+                BA.add_edge(i, 0, i, points2D_pre[i])
+                BA.add_edge(i, 1, i+1, points2D_cur[i])
+
+        BA.optimize(max_iterations = self.max_it)
+        BA_pose = sp.SE3(BA.get_pose(1).to_homogeneous_matrix())
+        self.initial_pose = BA_pose
+        return BA_pose.matrix()
 
 if __name__ == '__main__':
 
@@ -387,7 +427,8 @@ if __name__ == '__main__':
             if(len(Rts)!=0):
                 #res, Rt = odometry.compute(frame_curr.image, frame_curr.depth, frame_curr.mask, frame_prev.image, frame_prev.depth, frame_prev.mask)        
                 #res, Rt = odometry.compute(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)        
-                Rt = odometry2.compute_reproj(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)        
+                #Rt = odometry2.compute_reproj(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)        
+                Rt = odometry2.compute_reproj_g2o(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)        
                 #odometry2.compute(frame_curr.image, frame_curr.depth, None, frame_prev.image, frame_prev.depth, None)
 
             if(len(Rts)==0):

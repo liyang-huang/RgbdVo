@@ -7,8 +7,10 @@ import sophus as sp
 from scipy.spatial.transform import Rotation as R
 from BundleAdjustment import BundleAdjustment
 import g2o
+import time
 
 #np.set_printoptions(threshold=np.inf)
+np.seterr(divide='ignore', invalid='ignore')
 
 @dataclass
 class RgbdFrame:
@@ -112,25 +114,24 @@ def buildPyramidNormal(pyramidCloud):
 
     return pyramidNormal
 
-#def buildPyramidMask(pyramidDepth, minDepth, maxDepth, pyramidNormal):
-def buildPyramidMask(pyramidDepth, minDepth, maxDepth):
+def buildPyramidMask(pyramidDepth, minDepth, maxDepth, pyramidNormal):
     pyramidMask = []
     for i in range(len(pyramidDepth)):
         levelDepth = pyramidDepth[i]
-        #levelNormal = pyramidNormal[i]
         levelDepth = cv.patchNaNs(levelDepth, 0)
         minMask = levelDepth > minDepth
         maxMask = levelDepth < maxDepth
         levelMask = np.logical_and(minMask, maxMask)
 
-        #validNormalMask = levelNormal==levelNormal
-        ##channelMask_0, channelMask_1, channelMask_2 = cv.split(validNormalMask)
-        #channelMask_0 = validNormalMask[:,:,0]
-        #channelMask_1 = validNormalMask[:,:,1]
-        #channelMask_2 = validNormalMask[:,:,2]
-        #channelMask_01 = np.logical_and(channelMask_0, channelMask_1)
-        #validNormalMask = np.logical_and(channelMask_01, channelMask_2)
-        #levelMask = np.logical_and(levelMask, validNormalMask)
+        levelNormal = pyramidNormal[i]
+        validNormalMask = levelNormal==levelNormal
+        #channelMask_0, channelMask_1, channelMask_2 = cv.split(validNormalMask)
+        channelMask_0 = validNormalMask[:,:,0]
+        channelMask_1 = validNormalMask[:,:,1]
+        channelMask_2 = validNormalMask[:,:,2]
+        channelMask_01 = np.logical_and(channelMask_0, channelMask_1)
+        validNormalMask = np.logical_and(channelMask_01, channelMask_2)
+        levelMask = np.logical_and(levelMask, validNormalMask)
         
         pyramidMask.append(levelMask)
     return pyramidMask
@@ -166,7 +167,7 @@ def randomSubsetOfMask(mask, part):
 
     return mask_final
 
-def buildpyramidTexturedMask(pyramid_dI_dx, pyramid_dI_dy, minGradientMagnitudes, pyramidMaskDst, maxPointsPart, sobelScale):
+def buildPyramidTexturedMask(pyramid_dI_dx, pyramid_dI_dy, minGradientMagnitudes, pyramidMaskDst, maxPointsPart, sobelScale):
     sobelScale2_inv = 1.0 / (sobelScale * sobelScale)
     pyramidTexturedMask = []
     for i in range(len(pyramidMaskDst)):
@@ -182,6 +183,16 @@ def buildpyramidTexturedMask(pyramid_dI_dx, pyramid_dI_dy, minGradientMagnitudes
         pyramidTexturedMask.append(texturedMask_random)
 
     return pyramidTexturedMask
+
+def buildPyramidNormalsMask(pyramidNormals, pyramidMask, maxPointsPart):
+    pyramidNormalsMask = []
+    for i in range(len(pyramidNormals)):
+        levelMask = pyramidMask[i]
+        levelMask_random = randomSubsetOfMask(levelMask, maxPointsPart)
+        pyramidNormalsMask.append(levelMask_random)
+
+    return pyramidNormalsMask
+
 
 def computeCorresps(K, T, depth0, validMask0, depth1, selectMask1, maxDepthDiff):
     K_inv = np.linalg.inv(K)
@@ -299,6 +310,51 @@ def calcRgbdLsmMatrices(image0, cloud0, T, image1, dI_dx1, dI_dy1, corresps, fx,
     #        H[j][i] = H[i][j]
     return H, b
 
+def calcICPLsmMatrices(cloud0, T, cloud1, normals1, corresps):
+    res = []
+    tps0 = []
+    sigma = 0
+    R = T.matrix()[:3,:3]
+    t = T.matrix()[:3,3]
+    for i in corresps:
+        u0 = i[0]   
+        v0 = i[1]   
+        u1 = i[2]   
+        v1 = i[3]
+        p0 = cloud0[v0][u0]  
+        Tp0 = R @ p0 + t
+        n1 = normals1[v1][u1]
+        v = cloud1[v1][u1] - Tp0
+        diffs = n1[0] * v[0] + n1[1] * v[1] + n1[2] * v[2]
+        sigma = sigma + diffs * diffs
+        res.append(diffs)
+        tps0.append(Tp0)
+    sigma_final = np.sqrt(sigma / len(corresps))
+    
+    H = np.zeros((6,6))
+    b = np.zeros((6,))
+    for j, i in enumerate(corresps):
+        u1 = i[2]   
+        v1 = i[3]
+        w = sigma_final + np.abs(res[j])
+        w_tmp = 1.0 / w if w > np.finfo(np.float32).eps else 1.0
+        wn1 = normals1[v1][u1] * w_tmp
+        p0 = tps0[j]
+        A = np.empty(6)
+        A[3] = -p0[2] * wn1[1] + p0[1] * wn1[2]
+        A[4] =  p0[2] * wn1[0] - p0[0] * wn1[2]
+        A[5] = -p0[1] * wn1[0] + p0[0] * wn1[1]
+        A[0] = wn1[0]
+        A[1] = wn1[1]
+        A[2] = wn1[2]
+        A1 = np.vstack((A,A,A,A,A,A))
+        A_inv = A.reshape(6,1)
+        A2 = np.hstack((A_inv,A_inv,A_inv,A_inv,A_inv,A_inv))
+        H = H + A1 * A2
+        b = b + A * w_tmp * res[j]
+        
+    return H, b
+
 class Odometry:
     def __init__(self, odometryType):
         self.odometryType = odometryType
@@ -333,25 +389,25 @@ class Odometry:
         self.pyramidDepthDst = buildPyramidImage(dstDepth, levelCount)
 
         self.pyramidCloudSrc = buildPyramidCloud(self.pyramidDepthSrc, self.cameraMatrix)
-        #self.pyramidCloudDst = buildPyramidCloud(self.pyramidDepthDst, self.cameraMatrix)
+        self.pyramidCloudDst = buildPyramidCloud(self.pyramidDepthDst, self.cameraMatrix)
 
-        #self.pyramidNormalSrc = buildPyramidNormal(self.pyramidCloudSrc)
-        #self.pyramidNormalDst = buildPyramidNormal(self.pyramidCloudDst)
+        self.pyramidNormalSrc = buildPyramidNormal(self.pyramidCloudSrc)
+        self.pyramidNormalDst = buildPyramidNormal(self.pyramidCloudDst)
         
-        #self.pyramidMaskSrc = buildPyramidMask(self.pyramidDepthSrc, self.minDepth, self.maxDepth, self.pyramidNormalSrc)
-        #self.pyramidMaskDst = buildPyramidMask(self.pyramidDepthDst, self.minDepth, self.maxDepth, self.pyramidNormalDst)
-        self.pyramidMaskSrc = buildPyramidMask(self.pyramidDepthSrc, self.minDepth, self.maxDepth)
-        self.pyramidMaskDst = buildPyramidMask(self.pyramidDepthDst, self.minDepth, self.maxDepth)
+        self.pyramidMaskSrc = buildPyramidMask(self.pyramidDepthSrc, self.minDepth, self.maxDepth, self.pyramidNormalSrc)
+        self.pyramidMaskDst = buildPyramidMask(self.pyramidDepthDst, self.minDepth, self.maxDepth, self.pyramidNormalDst)
 
         self.pyramid_dI_dx = buildPyramidSobel(self.pyramidImageDst, 1, 0, self.sobelSize)
         self.pyramid_dI_dy = buildPyramidSobel(self.pyramidImageDst, 0, 1, self.sobelSize)
 
-        self.pyramidTexturedMask = buildpyramidTexturedMask(self.pyramid_dI_dx, self.pyramid_dI_dy, self.minGradientMagnitudes, self.pyramidMaskDst, self.maxPointsPart, self.sobelScale)
+        self.pyramidTexturedMask = buildPyramidTexturedMask(self.pyramid_dI_dx, self.pyramid_dI_dy, self.minGradientMagnitudes, self.pyramidMaskDst, self.maxPointsPart, self.sobelScale)
+        self.pyramidNormalsMask = buildPyramidNormalsMask(self.pyramidNormalDst, self.pyramidMaskDst, self.maxPointsPart)
 
         pyramidCameraMatrix= buildPyramidCameraMatrix(self.cameraMatrix, levelCount)
 
         minCorrespsCount = 20 * 6
         pose_tmp = self.initial_pose
+        tt1 = time.time()
         for level in range(levelCount, 0-1, -1):
             levelCameraMatrix = pyramidCameraMatrix[level]
             srcLevelDepth = self.pyramidDepthSrc[level]
@@ -361,16 +417,28 @@ class Odometry:
             
 
             for i in range(self.iterCounts[level]):
+                t1 = time.time()
                 corresps_rgbd, corresps_rgbd_count = computeCorresps(levelCameraMatrix, pose_tmp.inverse(), srcLevelDepth, self.pyramidMaskSrc[level], dstLevelDepth, self.pyramidTexturedMask[level], self.maxDepthDiff)
+                t2 = time.time()
+                corresps_icp, corresps_icp_count = computeCorresps(levelCameraMatrix, pose_tmp.inverse(), srcLevelDepth, self.pyramidMaskSrc[level], dstLevelDepth, self.pyramidNormalsMask[level], self.maxDepthDiff)
                 if (corresps_rgbd_count < minCorrespsCount):
                     break
+                t3 = time.time()
                 AtA_rgbd, AtB_rgbd = calcRgbdLsmMatrices(self.pyramidImageSrc[level], self.pyramidCloudSrc[level], pose_tmp, self.pyramidImageDst[level], self.pyramid_dI_dx[level], self.pyramid_dI_dy[level], corresps_rgbd, fx, fy, self.sobelScale) 
-                dx = np.linalg.solve(AtA_rgbd, AtB_rgbd)
+                t4 = time.time()
+                AtA_icp, AtB_icp = calcICPLsmMatrices(self.pyramidCloudSrc[level], pose_tmp, self.pyramidCloudDst[level], self.pyramidNormalDst[level], corresps_icp)
+                #dx = np.linalg.solve(AtA_rgbd, AtB_rgbd)
+                H = AtA_rgbd + AtA_icp
+                b = AtB_rgbd + AtB_icp
+                dx = np.linalg.solve(H, b)
                 pose_tmp = sp.SE3.exp(dx) * pose_tmp
-
+                #print('cor:',t2-t1)
+                #print('lsm:',t4-t3)
             #print(levelCameraMatrix)
             #exit()
-
+        #tt2 = time.time()
+        #print('total:',tt2-tt1)
+        #exit()
 
         self.initial_pose = pose_tmp
         return pose_tmp.matrix()

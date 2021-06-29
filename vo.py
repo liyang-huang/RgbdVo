@@ -193,6 +193,24 @@ def buildPyramidNormalsMask(pyramidNormals, pyramidMask, maxPointsPart):
 
     return pyramidNormalsMask
 
+def computeCorresps_py(K, T, depth0, validMask0, depth1, selectMask1, maxDepthDiff):
+    K_inv = np.linalg.inv(K)
+    R = T.matrix()[:3,:3]
+    t = T.matrix()[:3,3]
+    rows = np.shape(depth0)[0]
+    cols = np.shape(depth0)[1]
+    x = np.linspace(0, cols-1, cols)
+    y = np.linspace(0, rows-1, rows)
+    u1, v1 = np.meshgrid(x, y)
+    p1 = np.stack((u1, v1, np.ones(u1.shape)),axis=-1)
+    print(np.shape(p1))
+    print(np.shape(K_inv))
+    p1_nor = K_inv @ p1.reshape(rows, cols, 3, 1)
+    p1_3d = depth1.reshape(rows, cols, 1, 1) * p1_nor
+    print(p1)
+    print(p1_nor)
+    print(p1_3d)
+    exit()
 
 def computeCorresps(K, T, depth0, validMask0, depth1, selectMask1, maxDepthDiff):
     K_inv = np.linalg.inv(K)
@@ -417,19 +435,42 @@ class Odometry:
             
 
             for i in range(self.iterCounts[level]):
-                t1 = time.time()
-                corresps_rgbd, corresps_rgbd_count = computeCorresps(levelCameraMatrix, pose_tmp.inverse(), srcLevelDepth, self.pyramidMaskSrc[level], dstLevelDepth, self.pyramidTexturedMask[level], self.maxDepthDiff)
-                t2 = time.time()
-                corresps_icp, corresps_icp_count = computeCorresps(levelCameraMatrix, pose_tmp.inverse(), srcLevelDepth, self.pyramidMaskSrc[level], dstLevelDepth, self.pyramidNormalsMask[level], self.maxDepthDiff)
-                if (corresps_rgbd_count < minCorrespsCount):
+                #t1 = time.time()
+                corresps_rgbd, corresps_rgbd_count = computeCorresps(levelCameraMatrix, pose_tmp.inverse(), srcLevelDepth,
+                                                                     self.pyramidMaskSrc[level], dstLevelDepth, self.pyramidTexturedMask[level], self.maxDepthDiff)
+                #t2 = time.time()
+                #print('cor:',t2-t1)
+                #t1 = time.time()
+                #corresps_rgbd, corresps_rgbd_count = computeCorresps_py(levelCameraMatrix, pose_tmp.inverse(), srcLevelDepth, self.pyramidMaskSrc[level], dstLevelDepth, self.pyramidTexturedMask[level], self.maxDepthDiff)
+                #t2 = time.time()
+                #print('cor:',t2-t1)
+                #exit()
+                corresps_icp, corresps_icp_count = computeCorresps(levelCameraMatrix, pose_tmp.inverse(), srcLevelDepth, 
+                                                                   self.pyramidMaskSrc[level], dstLevelDepth, self.pyramidNormalsMask[level], self.maxDepthDiff)
+                #if ((corresps_rgbd_count < minCorrespsCount) and (corresps_icp_count < minCorrespsCount)):
+                #if (corresps_rgbd_count < minCorrespsCount):
+                #    break
+                H = np.zeros((6,6))
+                b = np.zeros((6,))
+                #t3 = time.time()
+                if(corresps_rgbd_count >= minCorrespsCount):
+                    AtA_rgbd, AtB_rgbd = calcRgbdLsmMatrices(self.pyramidImageSrc[level], self.pyramidCloudSrc[level], pose_tmp,
+                                                             self.pyramidImageDst[level], self.pyramid_dI_dx[level], self.pyramid_dI_dy[level], 
+                                                             corresps_rgbd, fx, fy, self.sobelScale) 
+                    H += AtA_rgbd
+                    b += AtB_rgbd 
+                #t4 = time.time()
+                if(corresps_icp_count >= minCorrespsCount):
+                    AtA_icp, AtB_icp = calcICPLsmMatrices(self.pyramidCloudSrc[level], pose_tmp, self.pyramidCloudDst[level], self.pyramidNormalDst[level], corresps_icp)
+                    H += AtA_icp
+                    b += AtB_icp
+                #H = AtA_rgbd + AtA_icp
+                #b = AtB_rgbd + AtB_icp
+                #print('H:',H)
+                #print('b:',b)
+                #print('det:',np.linalg.det(H))
+                if(int(np.linalg.det(H))==0):
                     break
-                t3 = time.time()
-                AtA_rgbd, AtB_rgbd = calcRgbdLsmMatrices(self.pyramidImageSrc[level], self.pyramidCloudSrc[level], pose_tmp, self.pyramidImageDst[level], self.pyramid_dI_dx[level], self.pyramid_dI_dy[level], corresps_rgbd, fx, fy, self.sobelScale) 
-                t4 = time.time()
-                AtA_icp, AtB_icp = calcICPLsmMatrices(self.pyramidCloudSrc[level], pose_tmp, self.pyramidCloudDst[level], self.pyramidNormalDst[level], corresps_icp)
-                #dx = np.linalg.solve(AtA_rgbd, AtB_rgbd)
-                H = AtA_rgbd + AtA_icp
-                b = AtB_rgbd + AtB_icp
                 dx = np.linalg.solve(H, b)
                 pose_tmp = sp.SE3.exp(dx) * pose_tmp
                 #print('cor:',t2-t1)

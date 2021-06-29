@@ -7,7 +7,7 @@ import mpl_toolkits.mplot3d
 
 #f = open("./pose.txt")
 #f1 = open("./estimated_trajectory.txt")
-f = open("./result/pose_fr1_xyz.txt")
+f = open("./result/pose_fr1_desk.txt")
 f1 = open("./result/pose_fr1_xyz.txt")
 x = []
 y = []
@@ -32,6 +32,6 @@ for line in f1:
        y1.append( float(data[2] ) )
        z1.append( float(data[3] ) )
 ax = plt.subplot( 111, projection='3d')
-ax.plot(x,y,z)
-#ax.plot(x1,y1,z1)
+#ax.plot(x,y,z)
+ax.plot(x1,y1,z1)
 plt.show()

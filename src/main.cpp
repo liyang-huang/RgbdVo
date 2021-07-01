@@ -129,9 +129,11 @@ int main(int argc, char** argv)
           fy = 525.0f,
           cx = 319.5f,
           cy = 239.5f;
-    if(filename.find("freiburg1") != string::npos)
+    //if(filename.find("freiburg1") != string::npos)
+    if(filename.find("fr1") != string::npos)
         setCameraMatrixFreiburg1(fx, fy, cx, cy);
-    if(filename.find("freiburg2") != string::npos)
+    //if(filename.find("freiburg2") != string::npos)
+    if(filename.find("fr2") != string::npos)
         setCameraMatrixFreiburg2(fx, fy, cx, cy);
     Mat cameraMatrix = Mat::eye(3,3,CV_32FC1);
     {

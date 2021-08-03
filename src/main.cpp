@@ -61,24 +61,31 @@ void writeResults( const string& filename, const vector<string>& timestamps, con
         if( Rt_curr.empty() )
             continue;
 
-        CV_Assert( Rt_curr.type() == CV_64FC1 );
+        //CV_Assert( Rt_curr.type() == CV_64FC1 );
+        CV_Assert( Rt_curr.type() == CV_32FC1 );
 
         Mat R = Rt_curr(Rect(0,0,3,3)), rvec;
         Rodrigues(R, rvec);
-        double alpha = norm( rvec );
+        //double alpha = norm( rvec );
+        float alpha = norm( rvec );
         if(alpha > DBL_MIN)
             rvec = rvec / alpha;
 
-        double cos_alpha2 = std::cos(0.5 * alpha);
-        double sin_alpha2 = std::sin(0.5 * alpha);
+        //double cos_alpha2 = std::cos(0.5 * alpha);
+        //double sin_alpha2 = std::sin(0.5 * alpha);
+        float cos_alpha2 = std::cos(0.5 * alpha);
+        float sin_alpha2 = std::sin(0.5 * alpha);
 
         rvec *= sin_alpha2;
 
-        CV_Assert( rvec.type() == CV_64FC1 );
+        //CV_Assert( rvec.type() == CV_64FC1 );
+        CV_Assert( rvec.type() == CV_32FC1 );
         // timestamp tx ty tz qx qy qz qw
         file << timestamps[i] << " " << fixed
-             << Rt_curr.at<double>(0,3) << " " << Rt_curr.at<double>(1,3) << " " << Rt_curr.at<double>(2,3) << " "
-             << rvec.at<double>(0) << " " << rvec.at<double>(1) << " " << rvec.at<double>(2) << " " << cos_alpha2 << endl;
+             //<< Rt_curr.at<double>(0,3) << " " << Rt_curr.at<double>(1,3) << " " << Rt_curr.at<double>(2,3) << " "
+             //<< rvec.at<double>(0) << " " << rvec.at<double>(1) << " " << rvec.at<double>(2) << " " << cos_alpha2 << endl;
+             << Rt_curr.at<float>(0,3) << " " << Rt_curr.at<float>(1,3) << " " << Rt_curr.at<float>(2,3) << " "
+             << rvec.at<float>(0) << " " << rvec.at<float>(1) << " " << rvec.at<float>(2) << " " << cos_alpha2 << endl;
 
     }
     file.close();
@@ -125,13 +132,16 @@ int main(int argc, char** argv)
     const int rgbPathLehgth = 17+8;
     const int depthPathLehgth = 17+10;
 
-    float fx = 525.0f, // default
-          fy = 525.0f,
-          cx = 319.5f,
-          cy = 239.5f;
-    if(filename.find("freiburg1") != string::npos)
+    //float fx = 525.0f, // default
+    //      fy = 525.0f,
+    //      cx = 319.5f,
+    //      cy = 239.5f;
+    float fx, fy, cx, cy;
+    //if(filename.find("freiburg1") != string::npos)
+    if(filename.find("fr1") != string::npos)
         setCameraMatrixFreiburg1(fx, fy, cx, cy);
-    if(filename.find("freiburg2") != string::npos)
+    //if(filename.find("freiburg2") != string::npos)
+    if(filename.find("fr2") != string::npos)
         setCameraMatrixFreiburg2(fx, fy, cx, cy);
     Mat cameraMatrix = Mat::eye(3,3,CV_32FC1);
     {
@@ -178,8 +188,9 @@ int main(int argc, char** argv)
             // scale depth
             Mat depth_flt;
             depth.convertTo(depth_flt, CV_32FC1, 1.f/5000.f);
+            //depth.convertTo(depth_flt, CV_32FC1, 1.f/100.f);
 #if !BILATERAL_FILTER
-            depth_flt.setTo(std::numeric_limits<float>::quiet_NaN(), depth == 0);
+            depth_flt.setTo(std::numeric_limits<float>::quiet_NaN(), depth == 0); //delete for fixpoint
             depth = depth_flt;
 #else
             tm_bilateral_filter.start();
@@ -217,11 +228,13 @@ int main(int argc, char** argv)
                 cout << "Time ratio " << tm_bilateral_filter.getTimeSec() / tm.getTimeSec() << endl;
 #endif
                 if(!res)
-                    Rt = Mat::eye(4,4,CV_64FC1);
+                    //Rt = Mat::eye(4,4,CV_64FC1);
+                    Rt = Mat::eye(4,4,CV_32FC1);
             }
 
             if( Rts.empty() )
-                Rts.push_back(Mat::eye(4,4,CV_64FC1));
+                //Rts.push_back(Mat::eye(4,4,CV_64FC1));
+                Rts.push_back(Mat::eye(4,4,CV_32FC1));
             else
             {
                 Mat& prevRt = *Rts.rbegin();

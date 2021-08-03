@@ -32,9 +32,10 @@ endif()
 file(GLOB TARGET_SRC
     src/main.cpp
     src/vo.cpp
+    src/fixed_point_util.cpp
 )
 
-include_directories(${OpenCV_INCLUDE_DIRS} include)
+include_directories(${OpenCV_INCLUDE_DIRS} include "/usr/include/eigen3/")
 
 add_executable(rgbd-odometry-liyang ${TARGET_SRC})
 target_link_libraries (rgbd-odometry-liyang ${OpenCV_LIBS})

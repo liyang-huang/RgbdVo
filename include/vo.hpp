@@ -3,6 +3,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core/utility.hpp>
 
+#define FIX_POINT 0
+
 using namespace cv;
   /** Object that contains a frame data.
    */
@@ -72,21 +74,25 @@ using namespace cv;
     DEFAULT_MAX_DEPTH()
     {
       return 4.f; // in meters
+      //return 4.f*50; // in meters
     }
     static inline float
     DEFAULT_MAX_DEPTH_DIFF()
     {
       return 0.07f; // in meters
+      //return 0.07f*50; // in meters
     }
     static inline float
     DEFAULT_MAX_POINTS_PART()
     {
       return 0.07f; // in [0, 1]
+      //return 1.0f; // in [0, 1]
     }
     static inline float
     DEFAULT_MAX_TRANSLATION()
     {
       return 0.15f; // in meters
+      //return 0.15f*50; // in meters
     }
     static inline float
     DEFAULT_MAX_ROTATION()

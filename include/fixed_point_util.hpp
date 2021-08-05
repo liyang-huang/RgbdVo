@@ -1,6 +1,8 @@
 #include <opencv2/core.hpp>
 #include <vector>
 #include <Eigen/Core>
+#include <gmpxx.h>
+#include <gmp.h>
 
 typedef int64_t FIXP_INT_SCALAR_TYPE;
 typedef float FIXP_SCALAR_TYPE;
@@ -66,19 +68,29 @@ public:
 		FixedPointConfig config = FixedPointConfig(0, 0, 0)) :
 		value_floating(value_floating),
 		value(value),
-		config(config) {};
+		config(config) {
+                mpz_init(big_value);
+        };
 
 	// Copy constructor
 	FixedPointType(const FixedPointType &object) {
 		value_floating = object.value_floating;
 		value = object.value;
 		config = object.config;
+                mpz_init(big_value);
+		mpz_set(big_value, object.big_value);
 	};
+
+	// destructor
+	~FixedPointType() {
+            mpz_clear(big_value);
+        };
 
 	bool enable_check_bit_width = true;
 	Floating value_floating;
 	FixedPoint value;
 	FixedPointConfig config;
+        mpz_t big_value;
 };
 
 /**
@@ -92,9 +104,9 @@ public:
 		FIXP_SCALAR_TYPE value_floating = 0,
 		FixedPointConfig config = FixedPointConfig(0, 0, 0));
 
-	FixedPointScalar(
-		FIXP_INT_SCALAR_TYPE value = 0,
-		FixedPointConfig config = FixedPointConfig(0, 0, 0));
+        //FixedPointScalar(
+        //	FIXP_INT_SCALAR_TYPE value = 0,
+        //	FixedPointConfig config = FixedPointConfig(0, 0, 0));
 	// Copy constructor
 	FixedPointScalar(const FixedPointScalar &object);
 
@@ -129,16 +141,18 @@ public:
 	FixedPointScalar operator / (const FixedPointScalar &object);
 
 	// Overload operator >>
-	FixedPointScalar operator >> (int bit_shift);
+	//FixedPointScalar operator >> (int bit_shift);
 
 	// Overload operator <<
-	FixedPointScalar operator << (int bit_shift);
+	//FixedPointScalar operator << (int bit_shift);
 
 	FixedPointScalar sqrt();
 
 	FixedPointScalar abs();
 
 	FIXP_SCALAR_TYPE to_floating();
+
+	void print_big_value();
 };
 /*
 class FixedPointMatrix : public FixedPointType<FIXP_MATRIX_TYPE, FIXP_INT_MATRIX_TYPE> {

@@ -2,6 +2,8 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
+#include <gmpxx.h>
+#include <gmp.h>
 
 #include "vo.hpp"
 #include "fixed_point_util.hpp"
@@ -11,8 +13,8 @@ using namespace std;
 //
 const int sign = 1;
 const int bit_width = 61; //have to less than FIXP_INT_SCALAR_TYPE?
-const int shift = 30;
-const int shift_half = 15;
+const int shift = 24;
+const int shift_half = 12;
 const FixedPointConfig fpconfig(sign, bit_width, shift);
 
 const int sobelSize = 3;
@@ -22,6 +24,7 @@ static inline
 void setDefaultIterCounts(Mat& iterCounts)
 {
     iterCounts = Mat(Vec4i(7,7,7,10));
+cout << "asdadasdas" << endl;
 }
 
 static inline
@@ -659,7 +662,6 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
                      Mat& _corresps)
 {
 
-
   FixedPointScalar fx (K.at<float>(0,0), fpconfig);//float
   FixedPointScalar fy (K.at<float>(1,1), fpconfig);//float
   FixedPointScalar cx (K.at<float>(0,2), fpconfig);//float
@@ -702,7 +704,7 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   FixedPointScalar RK_inv_20 = Rt_vec[8]*fx_inv;
   FixedPointScalar RK_inv_21 = Rt_vec[9]*fy_inv;
   FixedPointScalar RK_inv_22 = Rt_vec[8]*cx_inv + Rt_vec[9]*cy_inv + Rt_vec[10];
-
+  
   //FixedPointScalar KRK_inv_00 ((fx*RK_inv_00 + cx*RK_inv_20).value, fpconfig);
   //FixedPointScalar KRK_inv_01 ((fx*RK_inv_01 + cx*RK_inv_21).value, fpconfig);
   //FixedPointScalar KRK_inv_02 ((fx*RK_inv_02 + cx*RK_inv_22).value, fpconfig);
@@ -727,7 +729,6 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   FixedPointScalar Kt_0 = fx*Rt_vec[3] + cx*Rt_vec[11];
   FixedPointScalar Kt_1 = fy*Rt_vec[7] + cy*Rt_vec[11];
   FixedPointScalar Kt_2 = Rt_vec[11];
-
   int rows = depth1.rows;
   int cols = depth1.cols;
   int correspCount = 0;
@@ -797,7 +798,7 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
                                 FixedPointScalar exist_u1_shift ((int64_t)(exist_u1 * (1LL << shift)), fpconfig);
                                 FixedPointScalar exist_v1_shift ((int64_t)(exist_v1 * (1LL << shift)), fpconfig);
                                 FixedPointScalar exist_d1 = d1_vec[exist_v1*cols + exist_u1];
-                                FixedPointScalar exist_d1_shift ((KRK_inv_20*exist_u1_shift + KRK_inv_21*exist_v1_shift + KRK_inv_22).value, fpconfig);
+                                FixedPointScalar exist_d1_shift = KRK_inv_20*exist_u1_shift + KRK_inv_21*exist_v1_shift + KRK_inv_22;
                                 exist_d1_shift = (exist_d1*exist_d1_shift) + Kt_2;
                                 if(transformed_d1_shift.value > exist_d1_shift.value)
                                     continue;
@@ -1400,6 +1401,16 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
           
             A_vec2[i*cols + k] = A_vec2[k*cols + i] / A_vec2[k*cols + k] ;
         }
+        //cout << "k " << k << endl;
+        //cout << "A_vec[1] " << A_vec[1].value_floating << endl;
+        //cout << "A_vec[1] " << A_vec[1].value << endl;
+        //cout << "A_vec2[1] " << A_vec2[1].value_floating << endl;
+        //cout << "A_vec2[0] " << A_vec2[0].value_floating << endl;
+        //cout << "A_vec2[6] " << A_vec2[6].value_floating << endl;
+        //cout << "A_vec2[1] " << A_vec2[1].value << endl;
+        //cout << "A_vec2[0] " << A_vec2[0].value << endl;
+        //gmp_printf("%Zd\n", A_vec[1].big_value);
+        //gmp_printf("%Zd\n", A_vec2[1].big_value);
 
     }
 
@@ -1440,6 +1451,12 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
         cout << "B " << B_vec2[0].value_floating << endl;
     }
     //cout << x << endl;
+    //cout << "B " << B_vec2[0].value_floating << endl;
+    //cout << "B " << B_vec2[1].value_floating << endl;
+    //cout << "B " << B_vec2[2].value_floating << endl;
+    //cout << "B " << B_vec2[3].value_floating << endl;
+    //cout << "B " << B_vec2[4].value_floating << endl;
+    //cout << "B " << B_vec2[5].value_floating << endl;
     //exit(1);
 
 }

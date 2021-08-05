@@ -35,7 +35,9 @@ file(GLOB TARGET_SRC
     src/fixed_point_util.cpp
 )
 
-include_directories(${OpenCV_INCLUDE_DIRS} include "/usr/include/eigen3/")
+include_directories(${OpenCV_INCLUDE_DIRS} include "/usr/include/eigen3/" "~/liyang_lib/include")
 
 add_executable(rgbd-odometry-liyang ${TARGET_SRC})
-target_link_libraries (rgbd-odometry-liyang ${OpenCV_LIBS})
+target_link_libraries (rgbd-odometry-liyang ${OpenCV_LIBS} "~/liyang_lib/lib/libgmp.so.10.4.1" "~/liyang_lib/lib/libgmpxx.so.4.6.1")
+
+link_directories("~/liyang_lib/lib/" )

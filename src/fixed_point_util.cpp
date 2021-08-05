@@ -1,6 +1,8 @@
 #include "fixed_point_util.hpp"
 #include <opencv2/core/utility.hpp>
 #include <iostream>
+#include <gmpxx.h>
+#include <gmp.h>
 using namespace cv;
 
 FixedPointScalar::FixedPointScalar(
@@ -11,9 +13,38 @@ FixedPointScalar::FixedPointScalar(
            value = 0;
         else
 	   value = static_cast<FIXP_INT_SCALAR_TYPE>(value_floating * (1LL << config.shift));
-	check_bit_width(0);
+        mpz_set_si(big_value, value);
+        //std::cout << "value_floating " << value_floating << std::endl;
+        //std::cout << "value " << value << std::endl;
+        //gmp_printf("%Zd\n", big_value);
+	
+        //check_bit_width(0);
+        mpz_t max_value;
+        mpz_init(max_value);
+	mpz_set_si(max_value, (int64_t)1);
+        mpz_mul_2exp(max_value, max_value, (config.bit_width - 1));
+        mpz_t min_value;
+        mpz_init(min_value);
+	mpz_set_si(min_value, (int64_t)-1);
+        mpz_mul_2exp(min_value, min_value, (config.bit_width - 1));
+        int comp1 = mpz_cmp(max_value, big_value); // < max value
+        int comp2 = mpz_cmp(min_value, big_value); // >= min value
+        if(!((comp1 == 1) && (comp2 != 1)))
+        {
+             std::cout << "value_floating " << value_floating << std::endl;
+             std::cout << "value " << value << std::endl;
+             gmp_printf("%Zd\n", big_value);
+             gmp_printf("%Zd\n", max_value);
+             gmp_printf("%Zd\n", min_value);
+             std::cout << "comp1" << comp1 << std::endl;
+             std::cout << "comp2" << comp2 << std::endl;
+        }
+	assert(comp1 == 1);
+	assert(comp2 != 1);
+        mpz_clear(max_value);
+        mpz_clear(min_value);
 }
-
+/*
 FixedPointScalar::FixedPointScalar(
 	FIXP_INT_SCALAR_TYPE value,
 	FixedPointConfig config) :
@@ -21,16 +52,48 @@ FixedPointScalar::FixedPointScalar(
 	value_floating = FIXP_SCALAR_TYPE(value) / FIXP_SCALAR_TYPE(1LL << config.shift);
 	check_bit_width(0);
 }
-
+*/
 FixedPointScalar::FixedPointScalar(
 	const FixedPointScalar &object): 
 	FixedPointType<FIXP_SCALAR_TYPE, FIXP_INT_SCALAR_TYPE>(object){
 	value_floating = object.value_floating; 
 	value = object.value;
+        mpz_set(big_value, object.big_value);
 	config.sign = object.config.sign;
 	config.bit_width = object.config.bit_width;
 	config.shift = object.config.shift;
-	check_bit_width(0);
+        //std::cout << "value_floating " << value_floating << std::endl;
+        //std::cout << "value " << value << std::endl;
+        //gmp_printf("%Zd\n", big_value);
+
+	//check_bit_width(0);
+        mpz_t max_value;
+        mpz_init(max_value);
+	mpz_set_si(max_value, (int64_t)1);
+        mpz_mul_2exp(max_value, max_value, (config.bit_width - 1));
+        mpz_t min_value;
+        mpz_init(min_value);
+	mpz_set_si(min_value, (int64_t)-1);
+        mpz_mul_2exp(min_value, min_value, (config.bit_width - 1));
+        int comp1 = mpz_cmp(max_value, big_value); // < max value
+        int comp2 = mpz_cmp(min_value, big_value); // >= min value
+        if(!((comp1 == 1) && (comp2 != 1)))
+        {
+             std::cout << "value_floating " << value_floating << std::endl;
+             std::cout << "value_floating " << object.value_floating << std::endl;
+             std::cout << "value " << value << std::endl;
+             std::cout << "value " << object.value << std::endl;
+             gmp_printf("%Zd\n", big_value);
+             gmp_printf("%Zd\n", object.big_value);
+             gmp_printf("%Zd\n", max_value);
+             gmp_printf("%Zd\n", min_value);
+             std::cout << "comp1" << comp1 << std::endl;
+             std::cout << "comp2" << comp2 << std::endl;
+        }
+	assert(comp1 == 1);
+	assert(comp2 != 1);
+        mpz_clear(max_value);
+        mpz_clear(min_value);
 }
 
 FixedPointVector::FixedPointVector(const FixedPointScalar &_x, const FixedPointScalar &_y, const FixedPointScalar &_z)
@@ -45,33 +108,64 @@ void FixedPointScalar::check_bit_width(int op) {
 		//debug
 		//if (value >= (1LL << (config.bit_width)))
 		//	printf("[FIXP_ERROR] shift (%i) value (%lli) >= 2^(bit_width) (%i)\n", config.shift, value, config.bit_width);
-                if(!(value < (1LL << (config.bit_width))))
-                {
-                    std::cout << "liyang value_floating" << value_floating << std::endl;
-                    std::cout << "liyang shift" << config.shift << std::endl;
-                    std::cout << "liyang value" << value << std::endl;
-                    std::cout << "liyang bitwidth" << config.bit_width << std::endl;
-                    std::cout << value << std::endl;
-                    std::cout << (1LL << config.bit_width) << std::endl;
-                }
-		assert(value < (1LL << config.bit_width));
+                //if(!(value < (1LL << (config.bit_width))))
+                //{
+                //    std::cout << "liyang value_floating" << value_floating << std::endl;
+                //    std::cout << "liyang shift" << config.shift << std::endl;
+                //    std::cout << "liyang value" << value << std::endl;
+                //    std::cout << "liyang bitwidth" << config.bit_width << std::endl;
+                //    std::cout << value << std::endl;
+                //    std::cout << (1LL << config.bit_width) << std::endl;
+                //}
+	        //assert(value < (1LL << config.bit_width));
+                mpz_t max_value;
+                mpz_init(max_value);
+		mpz_set_si(max_value, (int64_t)1);
+                mpz_mul_2exp(max_value, max_value, config.bit_width);
+                int comp0 = mpz_cmp(max_value, big_value); // < max value
+		assert(comp0 == 1);
+                mpz_clear(max_value);
 	}
 	else {
 		//debug
 		//if (value >= (1LL << (config.bit_width - 1)) || value < -(1LL << (config.bit_width - 1)))
 		//	printf("[FIXP_ERROR] shift (%i) value (%lli) >= 2^(bit_width - 1) (%i)\n", config.shift, value, config.bit_width - 1);
                 //if(!(value < (1LL << (config.bit_width - 1))))
-                if(!( value >= -(1LL << (config.bit_width - 1)) ))
+                //if(!( value >= -(1LL << (config.bit_width - 1)) ))
+                //{
+                //    std::cout << "NaN " << cvIsNaN(value_floating) << std::endl;
+                //    std::cout << "liyang value_floating " << value_floating << std::endl;
+                //    std::cout << "liyang shift " << config.shift << std::endl;
+                //    std::cout << "liyang value " << value << std::endl;
+                //    std::cout << "liyang bitwidth " << config.bit_width << std::endl;
+                //    std::cout << "liyang op " << op << std::endl;
+                //}
+	        //assert(value < (1LL << (config.bit_width - 1))); 
+	        //assert(value >= -(1LL << (config.bit_width - 1)));
+                mpz_t max_value;
+                mpz_init(max_value);
+		mpz_set_si(max_value, (int64_t)1);
+                mpz_mul_2exp(max_value, max_value, (config.bit_width - 1));
+                mpz_t min_value;
+                mpz_init(min_value);
+		mpz_set_si(min_value, (int64_t)-1);
+                mpz_mul_2exp(min_value, min_value, (config.bit_width - 1));
+                int comp1 = mpz_cmp(max_value, big_value); // < max value
+                int comp2 = mpz_cmp(min_value, big_value); // >= min value
+                if(!((comp1 == 1) && (comp2 != 1)))
                 {
-                    std::cout << "NaN " << cvIsNaN(value_floating) << std::endl;
-                    std::cout << "liyang value_floating " << value_floating << std::endl;
-                    std::cout << "liyang shift " << config.shift << std::endl;
-                    std::cout << "liyang value " << value << std::endl;
-                    std::cout << "liyang bitwidth " << config.bit_width << std::endl;
-                    std::cout << "liyang op " << op << std::endl;
+                     std::cout << "value_floating" << value_floating << std::endl;
+                     gmp_printf("%Zd\n", big_value);
+                     gmp_printf("%Zd\n", max_value);
+                     gmp_printf("%Zd\n", min_value);
+                     std::cout << "comp1" << comp1 << std::endl;
+                     std::cout << "comp2" << comp2 << std::endl;
+                     std::cout << "liyang op " << op << std::endl;
                 }
-		assert(value < (1LL << (config.bit_width - 1))); 
-		assert(value >= -(1LL << (config.bit_width - 1)));
+		assert(comp1 == 1);
+		assert(comp2 != 1);
+                mpz_clear(max_value);
+                mpz_clear(min_value);
 	}
 }
 
@@ -99,6 +193,7 @@ FixedPointScalar& FixedPointScalar::operator= (const FixedPointScalar &object)
 	// do the copy
 	value_floating = object.value_floating;
 	value = object.value;
+        mpz_set(big_value, object.big_value);
 	config.sign = object.config.sign;
 	config.bit_width = object.config.bit_width;
 	config.shift = object.config.shift;
@@ -113,6 +208,7 @@ FixedPointScalar FixedPointScalar::operator + (const FixedPointScalar &object) {
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = value_floating + object.value_floating;
 	return_object.value = value + object.value;
+        mpz_add(return_object.big_value, big_value, object.big_value);
 	return_object.config.sign = config.sign | object.config.sign;
 	//return_object.config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
 	return_object.config.bit_width = config.bit_width, object.config.bit_width;
@@ -124,6 +220,7 @@ void FixedPointScalar::operator += (const FixedPointScalar &object) {
 	assert(config.shift == object.config.shift);
 	value_floating = value_floating + object.value_floating;
 	value = value + object.value;
+        mpz_add(big_value, big_value, object.big_value);
 	config.sign = config.sign | object.config.sign;
 	//config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
 	config.bit_width = config.bit_width;
@@ -139,6 +236,7 @@ FixedPointScalar FixedPointScalar::operator - (const FixedPointScalar &object) {
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = value_floating - object.value_floating;
 	return_object.value = value - object.value;
+        mpz_sub(return_object.big_value, big_value, object.big_value);
 	return_object.config.sign = 1;
 	//return_object.config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
 	return_object.config.bit_width = config.bit_width;
@@ -150,6 +248,7 @@ void FixedPointScalar::operator -= (const FixedPointScalar &object) {
 	assert(config.shift == object.config.shift);
 	value_floating = value_floating - object.value_floating;
 	value = value - object.value;
+        mpz_sub(big_value, big_value, object.big_value);
 	config.sign = 1;
 	//config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
 	config.bit_width = config.bit_width;
@@ -165,6 +264,13 @@ FixedPointScalar FixedPointScalar::operator * (const FixedPointScalar &object) {
         int64_t temp2 = object.value;
         int64_t temp3 = (temp1 * temp2) >> config.shift;
 	return_object.value = temp3;
+        mpz_mul(return_object.big_value, big_value, object.big_value);
+        mpz_t shift_value;
+        mpz_init(shift_value);
+	mpz_set_si(shift_value, (int64_t)1);
+        mpz_mul_2exp(shift_value, shift_value, config.shift);
+        mpz_div(return_object.big_value, return_object.big_value, shift_value);
+        mpz_clear(shift_value);
 	return_object.config.sign = config.sign | object.config.sign;
 	//return_object.config.shift = config.shift + object.config.shift;
 	return_object.config.shift = config.shift;
@@ -172,7 +278,47 @@ FixedPointScalar FixedPointScalar::operator * (const FixedPointScalar &object) {
 	return_object.config.bit_width = config.bit_width;
         //std::cout << "value " << return_object.value << std::endl;
         //std::cout << "bit_width " << return_object.config.bit_width << std::endl;
-	return_object.check_bit_width(3);
+        //std::cout << "value_floating " << value_floating << std::endl;
+        //std::cout << "value_floating " << object.value_floating << std::endl;
+        //std::cout << "value_floating " << return_object.value_floating << std::endl;
+        //std::cout << "value " << value << std::endl;
+        //std::cout << "value " << object.value << std::endl;
+        //std::cout << "value " << return_object.value << std::endl;
+        //gmp_printf("%Zd\n", big_value);
+        //gmp_printf("%Zd\n", object.big_value);
+        //gmp_printf("%Zd\n", return_object.big_value);
+
+	//return_object.check_bit_width(3);
+        mpz_t max_value;
+        mpz_init(max_value);
+        mpz_set_si(max_value, (int64_t)1);
+        mpz_mul_2exp(max_value, max_value, (return_object.config.bit_width - 1));
+        mpz_t min_value;
+        mpz_init(min_value);
+        mpz_set_si(min_value, (int64_t)-1);
+        mpz_mul_2exp(min_value, min_value, (return_object.config.bit_width - 1));
+        int comp1 = mpz_cmp(max_value, return_object.big_value); // < max value
+        int comp2 = mpz_cmp(min_value, return_object.big_value); // >= min value
+        if(!((comp1 == 1) && (comp2 != 1)))
+        {
+             std::cout << "value_floating " << value_floating << std::endl;
+             std::cout << "value_floating " << object.value_floating << std::endl;
+             std::cout << "value_floating " << return_object.value_floating << std::endl;
+             std::cout << "value " << value << std::endl;
+             std::cout << "value " << object.value << std::endl;
+             std::cout << "value " << return_object.value << std::endl;
+             gmp_printf("%Zd\n", big_value);
+             gmp_printf("%Zd\n", object.big_value);
+             gmp_printf("%Zd\n", return_object.big_value);
+             gmp_printf("%Zd\n", max_value);
+             gmp_printf("%Zd\n", min_value);
+             std::cout << "comp1" << comp1 << std::endl;
+             std::cout << "comp2" << comp2 << std::endl;
+        }
+        assert(comp1 == 1);
+        assert(comp2 != 1);
+        mpz_clear(max_value);
+        mpz_clear(min_value);
 	return return_object;
 }
 
@@ -185,13 +331,20 @@ FixedPointScalar FixedPointScalar::operator / (const FixedPointScalar &object) {
         int64_t temp2 = object.value;
         int64_t temp3 = (temp1 << config.shift) / temp2;
 	return_object.value = temp3;
+        mpz_t shift_value;
+        mpz_init(shift_value);
+	mpz_set_si(shift_value, (int64_t)1);
+        mpz_mul_2exp(shift_value, shift_value, config.shift);
+        mpz_mul(shift_value, big_value, shift_value);
+        mpz_div(return_object.big_value, shift_value, object.big_value); 
+        mpz_clear(shift_value);
 	return_object.config.sign = config.sign | object.config.sign;
 	//return_object.config.shift = config.shift - object.config.shift;
 	return_object.config.bit_width = config.bit_width;
 	return_object.check_bit_width(4);
 	return return_object;
 }
-
+/*
 FixedPointScalar FixedPointScalar::operator >> (int bit_shift) {
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = value_floating;
@@ -211,12 +364,19 @@ FixedPointScalar FixedPointScalar::operator << (int bit_shift) {
 	return_object.check_bit_width(5);
 	return return_object;
 }
-
+*/
 FixedPointScalar FixedPointScalar::sqrt() {
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = std::sqrt(value_floating);
         int64_t temp1 = value << config.shift;
 	return_object.value = FIXP_INT_SCALAR_TYPE(std::floor(std::sqrt(temp1)));
+        mpz_t shift_value;
+        mpz_init(shift_value);
+	mpz_set_si(shift_value, (int64_t)1);
+        mpz_mul_2exp(shift_value, shift_value, config.shift);
+        mpz_mul(shift_value, big_value, shift_value);
+        mpz_sqrt(return_object.big_value, shift_value);
+        mpz_clear(shift_value);
 	//return_object.value = FIXP_INT_SCALAR_TYPE(std::floor(std::sqrt(value))) << int(config.shift / 2);
 	//return_object.config.bit_width = int((config.bit_width + 1) / 2);
 	return_object.config.bit_width = config.bit_width;
@@ -231,6 +391,7 @@ FixedPointScalar FixedPointScalar::abs() {
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = std::abs(value_floating);
 	return_object.value = std::abs(value);
+        mpz_abs(return_object.big_value, big_value);
 	//return_object.config.sign = 0;
 	return_object.config.sign = config.sign;
 	return_object.check_bit_width(7);
@@ -239,7 +400,23 @@ FixedPointScalar FixedPointScalar::abs() {
 
 FIXP_SCALAR_TYPE FixedPointScalar::to_floating() {
         //std::cout << "value " << value << std::endl;
-	return FIXP_SCALAR_TYPE(value) / FIXP_SCALAR_TYPE(1LL << config.shift);
+	//return FIXP_SCALAR_TYPE(value) / FIXP_SCALAR_TYPE(1LL << config.shift);
+
+        int temp =  mpz_fits_slong_p(big_value);
+
+        if((value_floating!=(FIXP_SCALAR_TYPE)0.0) && (temp == (int)0))
+        {
+                std::cout << "to_floating() overflow " << std::endl;
+                exit(1);
+        }
+
+        int64_t big_value_chg = mpz_get_si(big_value);
+        double value_double = (double)big_value_chg / (double)(1LL << config.shift);
+        return (FIXP_SCALAR_TYPE)value_double;
+}
+
+void FixedPointScalar::print_big_value() {
+      gmp_printf("%Zd\n", big_value);
 }
 
 /*
@@ -429,8 +606,8 @@ Mat Vec2Mat_f(const std::vector<FixedPointScalar>& in_vec, int rows, int cols) {
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < cols; c++) {
             FixedPointScalar temp = in_vec[r*cols + c];
-            //out_mat.at<FIXP_SCALAR_TYPE>(r, c) = temp.to_floating();
-            out_mat.at<FIXP_SCALAR_TYPE>(r, c) = temp.value_floating;
+            out_mat.at<FIXP_SCALAR_TYPE>(r, c) = temp.to_floating();
+            //out_mat.at<FIXP_SCALAR_TYPE>(r, c) = temp.value_floating;
         }
     }
 

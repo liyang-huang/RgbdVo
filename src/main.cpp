@@ -240,6 +240,7 @@ int main(int argc, char** argv)
                 Mat& prevRt = *Rts.rbegin();
                 cout << "Rt " << Rt << endl;
                 Rts.push_back( prevRt * Rt );
+                //exit(1);
             }
 
             if(!frame_prev.empty())

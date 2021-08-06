@@ -24,7 +24,6 @@ static inline
 void setDefaultIterCounts(Mat& iterCounts)
 {
     iterCounts = Mat(Vec4i(7,7,7,10));
-cout << "asdadasdas" << endl;
 }
 
 static inline
@@ -1382,7 +1381,17 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
         for(int m = 0; m < k; m++)
         {   
             if(m==0)
+            {
                 A_vec2[k*cols + k] = A_vec[k*cols + k] - (A_vec2[m*cols + k] * A_vec2[k*cols + m]);
+                //cout << "A " << A_vec2[m*cols + k].value_floating << endl;
+                //cout << "A " << A_vec2[m*cols + k].value << endl;
+                //A_vec2[m*cols + k].print_big_value();
+                //cout << "A " << A_vec2[k*cols + m].value_floating << endl;
+                //cout << "A " << A_vec2[k*cols + m].value << endl;
+                //A_vec2[k*cols + m].print_big_value();
+                //cout << "tt " << (k*cols + m) << endl;
+ 
+            }
             else
                 A_vec2[k*cols + k] = A_vec2[k*cols + k] - (A_vec2[m*cols + k] * A_vec2[k*cols + m]);
         }
@@ -1401,19 +1410,8 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
           
             A_vec2[i*cols + k] = A_vec2[k*cols + i] / A_vec2[k*cols + k] ;
         }
-        //cout << "k " << k << endl;
-        //cout << "A_vec[1] " << A_vec[1].value_floating << endl;
-        //cout << "A_vec[1] " << A_vec[1].value << endl;
-        //cout << "A_vec2[1] " << A_vec2[1].value_floating << endl;
-        //cout << "A_vec2[0] " << A_vec2[0].value_floating << endl;
-        //cout << "A_vec2[6] " << A_vec2[6].value_floating << endl;
-        //cout << "A_vec2[1] " << A_vec2[1].value << endl;
-        //cout << "A_vec2[0] " << A_vec2[0].value << endl;
-        //gmp_printf("%Zd\n", A_vec[1].big_value);
-        //gmp_printf("%Zd\n", A_vec2[1].big_value);
 
     }
-
     //Mat AtA = Vec2Mat_f(A_vec, 6,6);
     //cout << AtA << endl;
     //Mat AtA2 = Vec2Mat_f(A_vec2, 6,6);
@@ -1443,6 +1441,7 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
         }
     }
 
+
     x = Vec2Mat_f(B_vec2, 6, 1);
     if(cvIsNaN(x.at<float>(0,0)))
     {
@@ -1457,6 +1456,18 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
     //cout << "B " << B_vec2[3].value_floating << endl;
     //cout << "B " << B_vec2[4].value_floating << endl;
     //cout << "B " << B_vec2[5].value_floating << endl;
+    //cout << "B " << B_vec2[0].value << endl;
+    //cout << "B " << B_vec2[1].value << endl;
+    //cout << "B " << B_vec2[2].value << endl;
+    //cout << "B " << B_vec2[3].value << endl;
+    //cout << "B " << B_vec2[4].value << endl;
+    //cout << "B " << B_vec2[5].value << endl;
+    //B_vec2[0].print_big_value();
+    //B_vec2[1].print_big_value();
+    //B_vec2[2].print_big_value();
+    //B_vec2[3].print_big_value();
+    //B_vec2[4].print_big_value();
+    //B_vec2[5].print_big_value();
     //exit(1);
 
 }

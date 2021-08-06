@@ -69,7 +69,7 @@ public:
 		value_floating(value_floating),
 		value(value),
 		config(config) {
-                mpz_init(big_value);
+                //mpz_init(big_value);
         };
 
 	// Copy constructor
@@ -77,20 +77,20 @@ public:
 		value_floating = object.value_floating;
 		value = object.value;
 		config = object.config;
-                mpz_init(big_value);
-		mpz_set(big_value, object.big_value);
+                //mpz_init(big_value);
+		//mpz_set(big_value, object.big_value);
 	};
 
 	// destructor
 	~FixedPointType() {
-            mpz_clear(big_value);
+            //mpz_clear(big_value);
         };
 
 	bool enable_check_bit_width = true;
 	Floating value_floating;
 	FixedPoint value;
 	FixedPointConfig config;
-        mpz_t big_value;
+        //mpz_t big_value;
 };
 
 /**
@@ -154,40 +154,6 @@ public:
 
 	void print_big_value();
 };
-/*
-class FixedPointMatrix : public FixedPointType<FIXP_MATRIX_TYPE, FIXP_INT_MATRIX_TYPE> {
-public:
-
-	FixedPointMatrix(
-		std::vector<FixedPointScalar> scalar_vector = {(FIXP_INT_SCALAR_TYPE)0 },
-		int rows = 1,
-		int cols = 1);
-
-	// Copy constructor
-	FixedPointMatrix(const FixedPointMatrix &object);
-
-    // Move constructor
-	FixedPointMatrix(FixedPointMatrix&& object);
-
-    // assignment
-	FixedPointMatrix& operator= (FixedPointMatrix& object);
-
-	FixedPointMatrix& operator= (FixedPointMatrix&& object);
-
-	// destructor
-	~FixedPointMatrix() {};
-
-	void check_bit_width();
-
-	void assign(const FixedPointScalar &object, const int& row, const int& col);
-
-	FixedPointScalar operator()(const int& row, const int& col);
-
-	FIXP_MATRIX_TYPE to_floating();
-
-	std::vector<FixedPointScalar> to_vector() const;
-};
-*/
 
 class FixedPointVector {
 public:

@@ -41,15 +41,15 @@ FixedPointScalar::FixedPointScalar(
         //mpz_clear(max_value);
         //mpz_clear(min_value);
 }
-/*
+
 FixedPointScalar::FixedPointScalar(
 	FIXP_INT_SCALAR_TYPE value,
 	FixedPointConfig config) :
 	FixedPointType<FIXP_SCALAR_TYPE, FIXP_INT_SCALAR_TYPE>(0, value, config) {
 	value_floating = FIXP_SCALAR_TYPE(value) / FIXP_SCALAR_TYPE(1LL << config.shift);
-	check_bit_width(0);
+	check_bit_width(122);
 }
-*/
+
 FixedPointScalar::FixedPointScalar(
 	const FixedPointScalar &object): 
 	FixedPointType<FIXP_SCALAR_TYPE, FIXP_INT_SCALAR_TYPE>(object){
@@ -60,7 +60,22 @@ FixedPointScalar::FixedPointScalar(
 	config.bit_width = object.config.bit_width;
 	config.shift = object.config.shift;
 
-	check_bit_width(0);
+        //if(!(value < (1LL << (config.bit_width - 1))))
+        ////if(!( value >= -(1LL << (config.bit_width - 1)) ))
+        //{
+        //    std::cout << "NaN " << cvIsNaN(value_floating) << std::endl;
+        //    std::cout << "value_floating " << value_floating << std::endl;
+        //    std::cout << "value_floating " << object.value_floating << std::endl;
+        //    std::cout << "shift " << config.shift << std::endl;
+        //    std::cout << "shift " << object.config.shift << std::endl;
+        //    std::cout << "value " << value << std::endl;
+        //    std::cout << "value " << object.value << std::endl;
+        //    std::cout << "bitwidth " << config.bit_width << std::endl;
+        //    std::cout << "bitwidth " << object.config.bit_width << std::endl;
+        //}
+        //assert(value < (1LL << (config.bit_width - 1))); 
+        //assert(value >= -(1LL << (config.bit_width - 1)));
+	check_bit_width(123);
         //mpz_t max_value;
         //mpz_init(max_value);
         //mpz_set_si(max_value, (int64_t)1);
@@ -108,6 +123,8 @@ void FixedPointScalar::check_bit_width(int op) {
                     std::cout << "liyang shift" << config.shift << std::endl;
                     std::cout << "liyang value" << value << std::endl;
                     std::cout << "liyang bitwidth" << config.bit_width << std::endl;
+                    std::cout << "liyang op " << op << std::endl;
+                    std::cout << "liyang sign " << config.sign << std::endl;
                     std::cout << value << std::endl;
                     std::cout << (1LL << config.bit_width) << std::endl;
                 }
@@ -124,8 +141,8 @@ void FixedPointScalar::check_bit_width(int op) {
 		//debug
 		//if (value >= (1LL << (config.bit_width - 1)) || value < -(1LL << (config.bit_width - 1)))
 		//	printf("[FIXP_ERROR] shift (%i) value (%lli) >= 2^(bit_width - 1) (%i)\n", config.shift, value, config.bit_width - 1);
-                //if(!(value < (1LL << (config.bit_width - 1))))
-                if(!( value >= -(1LL << (config.bit_width - 1)) ))
+                if(!(value < (1LL << (config.bit_width - 1))))
+                //if(!( value >= -(1LL << (config.bit_width - 1)) ))
                 {
                     std::cout << "NaN " << cvIsNaN(value_floating) << std::endl;
                     std::cout << "liyang value_floating " << value_floating << std::endl;
@@ -133,6 +150,7 @@ void FixedPointScalar::check_bit_width(int op) {
                     std::cout << "liyang value " << value << std::endl;
                     std::cout << "liyang bitwidth " << config.bit_width << std::endl;
                     std::cout << "liyang op " << op << std::endl;
+                    std::cout << "liyang sign " << config.sign << std::endl;
                 }
 	        assert(value < (1LL << (config.bit_width - 1))); 
 	        assert(value >= -(1LL << (config.bit_width - 1)));
@@ -343,6 +361,12 @@ FixedPointScalar FixedPointScalar::operator * (const FixedPointScalar &object) {
 // Ref: https://www.geeksforgeeks.org/operator-overloading-c/
 FixedPointScalar FixedPointScalar::operator / (const FixedPointScalar &object) {
 	FixedPointScalar return_object(*this);
+        //if(object.value_floating == 0){
+        //std::cout << "obj " << object.value_floating << std::endl;
+        //return_object.value_floating = 0.0;
+        //return_object.value = 0;
+        //}
+        //else{
 	return_object.value_floating = value_floating / object.value_floating;
 	//return_object.value = value / object.value;
         mpz_t temp1;
@@ -366,6 +390,7 @@ FixedPointScalar FixedPointScalar::operator / (const FixedPointScalar &object) {
         //int64_t temp2 = object.value;
         //int64_t temp3 = (temp1 << config.shift) / temp2;
 	return_object.value = temp3;
+        //}
         //mpz_t shift_value;
         //mpz_init(shift_value);
         //mpz_set_si(shift_value, (int64_t)1);
@@ -632,4 +657,135 @@ std::vector<FixedPointVector> f_PMat2Vec(const Mat& in_mat, FixedPointConfig con
 
     return out_vec;
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+FixedPointMatrix::FixedPointMatrix(
+	std::vector<FixedPointScalar> scalar_vector,
+	int rows,
+	int cols) :
+	FixedPointType<FIXP_MATRIX_TYPE, FIXP_INT_MATRIX_TYPE>(
+		FIXP_MATRIX_TYPE::Zero(rows, cols), 
+		FIXP_INT_MATRIX_TYPE::Zero(rows, cols), 
+		scalar_vector[0].config) {
+	assert(int(scalar_vector.size()) == rows * cols);
+	for (int r = 0; r < rows; r++) {
+		for (int c = 0; c < cols; c++) {
+			FixedPointScalar temp = scalar_vector[r*cols + c];
+			value_floating(r, c) = temp.value_floating;
+			value(r, c) = temp.value;
+			//assert(config == temp.config);
+		}
+	}
+	check_bit_width();
+}
+FixedPointMatrix::FixedPointMatrix(
+	const FixedPointMatrix &object) :
+	FixedPointType<FIXP_MATRIX_TYPE, FIXP_INT_MATRIX_TYPE>(object) {
+	value_floating = object.value_floating;
+	value = object.value;
+	config.sign = object.config.sign;
+	config.bit_width = object.config.bit_width;
+	config.shift = object.config.shift;
+	check_bit_width();
+}
+FixedPointMatrix::FixedPointMatrix(
+	FixedPointMatrix&& object) :
+        FixedPointType<FIXP_MATRIX_TYPE, FIXP_INT_MATRIX_TYPE>(object) {
+    value_floating = std::move(object.value_floating);
+    value = std::move(object.value);
+    config = object.config;
+	check_bit_width();
+}
+FixedPointMatrix& FixedPointMatrix::operator= (FixedPointMatrix& object){
+    value_floating = object.value_floating;
+    value = object.value;
+    config = object.config;
+    return *this;
+};
+FixedPointMatrix& FixedPointMatrix::operator= (FixedPointMatrix&& object){
+    value_floating = std::move(object.value_floating);
+    value = std::move(object.value);
+    config = object.config;
+    return *this;
+};
+void FixedPointMatrix::check_bit_width() {
+	if (!enable_check_bit_width)
+		return;
+	FIXP_INT_SCALAR_TYPE max_value = value.maxCoeff();
+	FIXP_INT_SCALAR_TYPE min_value = value.minCoeff();
+	if (config.sign == 0) {
+		FIXP_INT_SCALAR_TYPE capacity = 1LL << (config.bit_width);
+		//debug
+		if (max_value >= capacity || min_value < 0)
+			//printf("[FIXP_ERROR] shift (%i) max_value (%lli) >= 2^(bit_width) (%i) or min_value (%lli) < 0\n", config.shift, max_value, config.bit_width, min_value);
+			printf("[FIXP_ERROR] shift (%d) max_value (%ld) >= 2^(bit_width) (%d) or min_value (%ld) < 0\n", config.shift, max_value, config.bit_width, min_value);
+		assert(max_value < capacity);
+		assert(min_value >= 0);
+	}
+	else {
+		FIXP_INT_SCALAR_TYPE capacity = 1LL << (config.bit_width - 1);
+		//debug
+		if (std::abs(max_value) >= capacity || std::abs(min_value) >= capacity)
+			//printf("[FIXP_ERROR] shift (%i) max_value (%lli) or abs(min_value) (%lli) >= 2^(bit_width - 1) (%i)\n", config.shift, max_value, min_value, config.bit_width - 1);
+			printf("[FIXP_ERROR] shift (%d) max_value (%ld) or abs(min_value) (%ld) >= 2^(bit_width - 1) (%d)\n", config.shift, max_value, min_value, config.bit_width - 1);
+		assert(std::abs(max_value) < capacity);
+		assert(std::abs(min_value) < capacity);
+	}
+}
+void FixedPointMatrix::assign(
+	const FixedPointScalar &object,
+	const int& row,
+	const int& col) {
+	assert(config.sign == object.config.sign);
+	assert(config.shift == object.config.shift);
+	assert(config.bit_width >= object.config.bit_width);
+	value_floating(row, col) = object.value_floating;
+	value(row, col) = object.value;
+}
+FixedPointScalar FixedPointMatrix::operator()(
+	const int& row,
+	const int& col) {
+	FixedPointScalar scalar(value_floating(row, col), config);
+	scalar.set_value(value(row, col), config);
+	return scalar;
+}
+FIXP_MATRIX_TYPE FixedPointMatrix::to_floating() {
+	FIXP_MATRIX_TYPE return_floating = value.cast<FIXP_SCALAR_TYPE>();
+	return return_floating / (1LL << config.shift);
+}
+std::vector<FixedPointScalar> FixedPointMatrix::to_vector() const {
+	std::vector<FixedPointScalar> ret(value.rows()*value.cols(), FixedPointScalar((FIXP_SCALAR_TYPE)0));
+	for (int r = 0; r < value.rows(); r++) {
+		for (int c = 0; c < value.cols(); c++) {
+			FixedPointScalar temp(value_floating(r, c), config);
+			temp.value = value(r, c);
+			temp.check_bit_width(777777);
+			ret[r*value.cols() + c] = temp;
+		}
+	}
+	return ret;
+}
+/*
+FixedPointMatrixP::FixedPointMatrixP(
+	std::vector<FixedPointVector> point_vector,
+	int rows,
+	int cols) {
+	assert(int(point_vector.size()) == rows * cols);
+	for (int r = 0; r < rows; r++) {
+		for (int c = 0; c < cols; c++) {
+			FixedPointVector temp = point_vector[r*cols + c];
+			value(r, c) = temp;
+		}
+	}
+}
 
+std::vector<FixedPointVector> FixedPointMatrixP::to_vector() const {
+	std::vector<FixedPointVector> ret;
+	for (int r = 0; r < value.rows(); r++) {
+		for (int c = 0; c < value.cols(); c++) {
+			FixedPointVector temp = value(r, c);
+			ret.push_back(temp);
+		}
+	}
+	return ret;
+}
+*/

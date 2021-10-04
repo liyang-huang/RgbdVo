@@ -104,9 +104,9 @@ public:
 		FIXP_SCALAR_TYPE value_floating = 0,
 		FixedPointConfig config = FixedPointConfig(0, 0, 0));
 
-        //FixedPointScalar(
-        //	FIXP_INT_SCALAR_TYPE value = 0,
-        //	FixedPointConfig config = FixedPointConfig(0, 0, 0));
+        FixedPointScalar(
+        	FIXP_INT_SCALAR_TYPE value = 0,
+        	FixedPointConfig config = FixedPointConfig(0, 0, 0));
 	// Copy constructor
 	FixedPointScalar(const FixedPointScalar &object);
 
@@ -174,3 +174,37 @@ cv::Mat PVec2Mat_f(const std::vector<FixedPointVector>& in_vec, int rows, int co
 std::vector<FixedPointVector> i_PMat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
 std::vector<FixedPointVector> f_PMat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
 cv::Mat Vec2Mat_d(const std::vector<FixedPointScalar>& in_vec, int rows, int cols);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class FixedPointMatrix : public FixedPointType<FIXP_MATRIX_TYPE, FIXP_INT_MATRIX_TYPE> {
+public:
+	FixedPointMatrix(
+		std::vector<FixedPointScalar> scalar_vector = {(FIXP_INT_SCALAR_TYPE)0 },
+		int rows = 1,
+		int cols = 1);
+	// Copy constructor
+	FixedPointMatrix(const FixedPointMatrix &object);
+    // Move constructor
+	FixedPointMatrix(FixedPointMatrix&& object);
+    // assignment
+	FixedPointMatrix& operator= (FixedPointMatrix& object);
+	FixedPointMatrix& operator= (FixedPointMatrix&& object);
+	// destructor
+	~FixedPointMatrix() {};
+	void check_bit_width();
+	void assign(const FixedPointScalar &object, const int& row, const int& col);
+	FixedPointScalar operator()(const int& row, const int& col);
+	FIXP_MATRIX_TYPE to_floating();
+	std::vector<FixedPointScalar> to_vector() const;
+};
+/*
+typedef Eigen::Matrix<FixedPointVector(FixedPointScalar, FixedPointScalar, FixedPointScalar) , Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> FIXP_POINT_MATRIX_TYPE;
+class FixedPointMatrixP {
+public:
+	FixedPointMatrixP(std::vector<FixedPointVector> point_vector, int rows, int cols);
+	~FixedPointMatrixP() {};
+	//std::vector<FixedPointVector> to_vector() const;
+
+        FIXP_POINT_MATRIX_TYPE value;
+};
+*/

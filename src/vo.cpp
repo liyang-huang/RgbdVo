@@ -31,22 +31,133 @@ void setDefaultMinGradientMagnitudes(Mat& minGradientMagnitudes)
 {
     minGradientMagnitudes = Mat(Vec4f(10,10,10,10));
 }
-
+/*
 static
-void normalsComputer(const Mat& points3d, int rows, int cols, Mat & normals) 
+//vector<FixedPointVector> normalsComputer(const vector<FixedPointVector>& p3d_vec, int rows, int cols) 
+vector<FixedPointVector> normalsComputer(vector<FixedPointVector>& p3d_vec, int rows, int cols) 
 {
-  normals.create(points3d.size(), CV_MAKETYPE(points3d.depth(), 3));
+  FixedPointScalar zero_value((FIXP_SCALAR_TYPE)0, fpconfig);
+  //FixedPointScalar zero_value((FIXP_SCALAR_TYPE)std::numeric_limits<double>::quiet_NaN(), fpconfig);
+  FixedPointVector zero_vec(zero_value, zero_value, zero_value);
+  vector<FixedPointVector> normals(rows*cols, zero_vec);
   for (int y = 0; y < rows - 1; ++y)
   {
     for (int x = 0; x < cols - 1; ++x)
     {
+        //if(!(cvIsNaN(p3d_vec[y*cols + x].x.value_floating) || cvIsNaN(p3d_vec[y*cols + (x+1)].x.value_floating) || cvIsNaN(p3d_vec[(y+1)*cols + x].x.value_floating)))
+        {
+            FixedPointScalar du_x = p3d_vec[y*cols + (x+1)].x - p3d_vec[y*cols + x].x;
+            FixedPointScalar dv_x = p3d_vec[(y+1)*cols + x].x - p3d_vec[y*cols + x].x;
+            FixedPointScalar du_y = p3d_vec[y*cols + (x+1)].y - p3d_vec[y*cols + x].y;
+            FixedPointScalar dv_y = p3d_vec[(y+1)*cols + x].y - p3d_vec[y*cols + x].y;
+            FixedPointScalar du_z = p3d_vec[y*cols + (x+1)].z - p3d_vec[y*cols + x].z;
+            FixedPointScalar dv_z = p3d_vec[(y+1)*cols + x].z - p3d_vec[y*cols + x].z;
+            FixedPointScalar n_x = (du_y * dv_z) - (du_z * dv_y);
+            FixedPointScalar n_y = (du_z * dv_x) - (du_x * dv_z);
+            FixedPointScalar n_z = (du_x * dv_y) - (du_y * dv_x);
+            FixedPointScalar n2_x = n_x*n_x;
+            FixedPointScalar n2_y = n_y*n_y;
+            FixedPointScalar n2_z = n_z*n_z;
+            FixedPointScalar norm_pre = n2_x + n2_y + n2_z;
+            FixedPointScalar norm = (norm_pre).sqrt();
+            //if(!cvIsNaN(norm.value_floating))
+            if(!(norm.value==0))
+            {
+                FixedPointScalar n_x_final = n_x / norm;
+                cout << "n.x: " << n_x.value_floating << endl;
+                cout << "n.y: " << n_y.value_floating << endl;
+                cout << "n.z: " << n_z.value_floating << endl;
+                //cout << "norm+++: " << norm.value_floating << endl;
+                //cout << "n_final.x: " << n_x_final.value_floating << endl;
+                FixedPointScalar n_y_final = n_y / norm;
+                FixedPointScalar n_z_final = n_z / norm;
+                FixedPointVector normal(n_x_final, n_y_final, n_z_final);   
+                normals[y*cols + x] = normal;
+                //cout << "n_final.y: " << n_y_final.value_floating << endl;
+                //cout << "n_final.z: " << n_z_final.value_floating << endl;
+                //cout << "liyang test"<< norm_pre.value_floating << endl;
+            }
+            if((x==590)&&(y==478))
+            {
+                cout << "norm: " << norm.value_floating << endl;
+                cout << "norm: " << norm.value << endl;
+                cout << "norm_pre: " << norm_pre.value_floating << endl;
+                cout << "norm_pre: " << norm_pre.value << endl;
+                cout << "n.x: " << n_x.value_floating << endl;
+                cout << "n.y: " << n_y.value_floating << endl;
+                cout << "n.z: " << n_z.value_floating << endl;
+                //cout << "n_final.x: " << n_x_final.value_floating << endl;
+                //cout << "n_final.y: " << n_y_final.value_floating << endl;
+                //cout << "n_final.z: " << n_z_final.value_floating << endl;
+                cout << normals[y*cols + x].x.value_floating << endl;
+                cout << normals[y*cols + x].y.value_floating << endl;
+                cout << normals[y*cols + x].z.value_floating << endl;
+                cout << p3d_vec[y*cols + x].x.value_floating << endl;
+                cout << p3d_vec[y*cols + x].y.value_floating << endl;
+                cout << p3d_vec[y*cols + x].z.value_floating << endl;
+                cout << "du.x: " << du_x.value_floating << endl;
+                cout << "du.y: " << du_y.value_floating << endl;
+                cout << "du.z: " << du_z.value_floating << endl;
+                cout << "dv.x: " << dv_x.value_floating << endl;
+                cout << "dv.y: " << dv_y.value_floating << endl;
+                cout << "dv.z: " << dv_z.value_floating << endl;
+                exit(1);
+            }
+        }
+    }
+  }
+  return normals;
+}
+*/
+static
+void normalsComputer(const Mat& points3d, int rows, int cols, Mat & normals) 
+{
+  normals.create(points3d.size(), CV_MAKETYPE(points3d.depth(), 3));
+  //for (int y = 0; y < rows - 1; ++y)
+  for (int y = 0; y < rows ; ++y)
+  {
+    //for (int x = 0; x < cols - 1; ++x)
+    for (int x = 0; x < cols ; ++x)
+    {
     	Vec3f du = points3d.at<Vec3f>(y,x+1) - points3d.at<Vec3f>(y,x);
     	Vec3f dv = points3d.at<Vec3f>(y+1,x) - points3d.at<Vec3f>(y,x);
-        normals.at<Vec3f>(y,x) = du.cross(dv);
+        //normals.at<Vec3f>(y,x) = du.cross(dv);
+        normals.at<Vec3f>(y,x)[0] = (du[1]*dv[2]) - (du[2]*dv[1]);
+        normals.at<Vec3f>(y,x)[1] = (du[2]*dv[0]) - (du[0]*dv[2]);
+        normals.at<Vec3f>(y,x)[2] = (du[0]*dv[1]) - (du[1]*dv[0]);
     	float norm = sqrt(normals.at<Vec3f>(y,x)[0]*normals.at<Vec3f>(y,x)[0] + normals.at<Vec3f>(y,x)[1]*normals.at<Vec3f>(y,x)[1] +normals.at<Vec3f>(y,x)[2]*normals.at<Vec3f>(y,x)[2]);
-            normals.at<Vec3f>(y,x)[0] = normals.at<Vec3f>(y,x)[0] / norm;
-            normals.at<Vec3f>(y,x)[1] = normals.at<Vec3f>(y,x)[1] / norm;
-            normals.at<Vec3f>(y,x)[2] = normals.at<Vec3f>(y,x)[2] / norm;
+        normals.at<Vec3f>(y,x)[0] = normals.at<Vec3f>(y,x)[0] / norm;
+        normals.at<Vec3f>(y,x)[1] = normals.at<Vec3f>(y,x)[1] / norm;
+        normals.at<Vec3f>(y,x)[2] = normals.at<Vec3f>(y,x)[2] / norm;
+        //if((x==590)&&(y==478))
+        //{
+        //    cout << "norm: " << norm << endl;
+        //    cout << normals.at<Vec3f>(y,x)[0] << endl;
+        //    cout << normals.at<Vec3f>(y,x)[1] << endl;
+        //    cout << normals.at<Vec3f>(y,x)[2] << endl;
+        //    cout << points3d.at<Vec3f>(y,x)[0] << endl;
+        //    cout << points3d.at<Vec3f>(y,x)[1] << endl;
+        //    cout << points3d.at<Vec3f>(y,x)[2] << endl;
+        //    cout << points3d.at<Vec3f>(y,x+1)[0] << endl;
+        //    cout << points3d.at<Vec3f>(y,x+1)[1] << endl;
+        //    cout << points3d.at<Vec3f>(y,x+1)[2] << endl;
+        //    cout << points3d.at<Vec3f>(y+1,x)[0] << endl;
+        //    cout << points3d.at<Vec3f>(y+1,x)[1] << endl;
+        //    cout << points3d.at<Vec3f>(y+1,x)[2] << endl;
+        //    cout << "du.x: " << du[0] << endl;
+        //    cout << "du.y: " << du[1] << endl;
+        //    cout << "du.z: " << du[2] << endl;
+        //    cout << "dv.x: " << dv[0] << endl;
+        //    cout << "dv.y: " << dv[1] << endl;
+        //    cout << "dv.z: " << dv[2] << endl;
+        //    exit(1);
+        //}
+        if((x==cols-1)||(y==rows-1))
+        {
+           normals.at<Vec3f>(y,x)[0] = 0.0;
+           normals.at<Vec3f>(y,x)[1] = 0.0;
+           normals.at<Vec3f>(y,x)[2] = 0.0;
+        }
     }
   }
 }
@@ -146,6 +257,36 @@ void preparePyramidImage(const Mat& image, std::vector<Mat>& pyramidImage, size_
     }
     else
         buildPyramid(image, pyramidImage, (int)levelCount - 1);
+}
+
+static
+void buildpy(const Mat& depth, std::vector<FixedPointMatrix>& pyramidDepth, size_t levelCount)
+{
+    if(pyramidDepth.empty())
+    {
+        Mat tmp;
+        for( int i = 0; i < levelCount; i++ )
+        {   
+            Mat dwn;
+            vector<FixedPointScalar> depth_fixp;
+            if(i != 0)
+            {
+                pyrDown(tmp, dwn);
+                depth_fixp = f_Mat2Vec(dwn, fpconfig);
+                FixedPointMatrix depth_mtx(depth_fixp, dwn.rows, dwn.cols);
+                pyramidDepth.push_back(depth_mtx);
+                tmp = dwn;
+            }
+            else
+            {
+                depth_fixp = f_Mat2Vec(depth, fpconfig);
+                FixedPointMatrix depth_mtx(depth_fixp, depth.rows, depth.cols);
+                pyramidDepth.push_back(depth_mtx);
+                tmp = depth;
+            }
+
+        }
+    }
 }
 
 static
@@ -272,7 +413,7 @@ depthTo3dNoMask(const cv::Mat& in_depth, const cv::Mat_<T>& K, cv::Mat& points3d
     }
   }
 }
-
+/*
 void
 depthTo3d(InputArray depth_in, InputArray K_in, OutputArray points3d_out)
 {
@@ -299,20 +440,94 @@ depthTo3d(InputArray depth_in, InputArray K_in, OutputArray points3d_out)
   else
     depthTo3dNoMask<float>(depth, K_new, points3d);
 }
+*/
+
+vector<FixedPointVector> depthTo3d(const FixedPointMatrix& depth, const Mat& K)
+{
+  vector<FixedPointScalar> cam_fixp;
+  cam_fixp = f_Mat2Vec(K, fpconfig);
+  FixedPointScalar fx =cam_fixp[0];
+  FixedPointScalar fy =cam_fixp[4];
+  FixedPointScalar cx =cam_fixp[2];
+  FixedPointScalar cy =cam_fixp[5];
+  vector<FixedPointScalar> depth_vec;
+  //depth_vec = f_Mat2Vec(depth, fpconfig);
+  depth_vec = depth.to_vector();
+
+  // Create 3D points in one go.
+  //Mat points3d;
+  //points3d.create(depth.size(), CV_MAKETYPE(K.depth(), 3));
+
+  vector<FixedPointVector> p3d_vec;
+  for (int y = 0; y < depth.value_floating.rows(); ++y)
+  {
+    for (int x = 0; x < depth.value_floating.cols(); ++x)
+    {
+         //FIXP_INT_SCALAR_TYPE value_x = x << shift;
+         //FixedPointScalar p_x(value_x, fpconfig);
+         FixedPointScalar p_x((FIXP_SCALAR_TYPE)x, fpconfig);
+
+         
+         p_x = (p_x - cx);
+         p_x = p_x * depth_vec[y*depth.value_floating.cols() + x];
+         p_x = p_x / fx;
+         
+
+         //FIXP_INT_SCALAR_TYPE value_y = y << shift;
+         //FixedPointScalar p_y(value_y, fpconfig);
+         FixedPointScalar p_y((FIXP_SCALAR_TYPE)y, fpconfig);
+
+         p_y = (p_y - cy) / fy;
+         p_y = p_y * depth_vec[y*depth.value_floating.cols() + x];
+
+         //FixedPointScalar p_z(depth_vec[y*depth.cols + x].value, fpconfig);
+         FixedPointScalar p_z = depth_vec[y*depth.value_floating.cols() + x];
+
+         FixedPointVector p3d(p_x, p_y, p_z);
+         //FixedPointVector p3d;
+         //p3d.set(p_x, p_y, p_z);
+         p3d_vec.push_back(p3d);
+         //if((y*depth.cols + x) == 307148)
+         //{
+         //    cout << "test:" << depth_vec[(y*depth.cols + x)].value << endl;
+         //    cout << "x:" << x << endl;
+         //    cout << "y:" << y << endl;
+         //    cout << "p_z:" << p_z.value << endl;
+         //}
+    }
+  }
+  //int rows = depth.value_floating.rows();
+  //int cols = depth.value_floating.cols();
+  //points3d = PVec2Mat_f(p3d_vec, depth.rows, depth.cols);
+  //FixedPointMatrixP points3d(p3d_vec, rows, cols);
+  //cout << "test:" << depth.rows << endl;
+  //cout << "test:" << depth_vec[307148].value << endl;
+  //cout << "test:" << p3d_vec[307148].x.value << endl;
+  //cout << "test:" << p3d_vec[307148].y.value << endl;
+  //cout << "test:" << p3d_vec[307148].z.value << endl;
+  //cout << "testi:" << points3d.at<Vec3i>(479,588)[0] << endl;
+  //cout << "testi:" << points3d.at<Vec3i>(479,588)[1] << endl;
+  //cout << "testi:" << points3d.at<Vec3i>(479,588)[2] << endl;
+  //exit(1);
+  //return points3d;
+  return p3d_vec;
+}
 
 static
-void preparePyramidCloud(const std::vector<Mat>& pyramidDepth, const Mat& cameraMatrix, std::vector<Mat>& pyramidCloud)
+//void preparePyramidCloud(const std::vector<Mat>& pyramidDepth, const Mat& cameraMatrix, std::vector<Mat>& pyramidCloud)
+//void preparePyramidCloud(const std::vector<FixedPointMatrix>& pyramidDepth, const Mat& cameraMatrix, std::vector<Mat>& pyramidCloud)
+void preparePyramidCloud(const std::vector<FixedPointMatrix>& pyramidDepth, const Mat& cameraMatrix, std::vector<std::vector<FixedPointVector>>& pyramidCloud)
 {
     if(!pyramidCloud.empty())
     {
         if(pyramidCloud.size() != pyramidDepth.size())
             CV_Error(Error::StsBadSize, "Incorrect size of pyramidCloud.");
-
-        for(size_t i = 0; i < pyramidDepth.size(); i++)
-        {
-            CV_Assert(pyramidCloud[i].size() == pyramidDepth[i].size());
-            CV_Assert(pyramidCloud[i].type() == CV_32FC3);
-        }
+        
+        //for(size_t i = 0; i < pyramidDepth.size(); i++)
+        //{
+        //    //CV_Assert(pyramidCloud[i].size() == pyramidDepth[i].size());
+        //    //CV_Assert(pyramidCloud[i].type() == CV_32FC3);
+        //}
     }
     else
     {
@@ -322,8 +537,10 @@ void preparePyramidCloud(const std::vector<Mat>& pyramidDepth, const Mat& camera
         pyramidCloud.resize(pyramidDepth.size());
         for(size_t i = 0; i < pyramidDepth.size(); i++)
         {
-            Mat cloud;
-            depthTo3d(pyramidDepth[i], pyramidCameraMatrix[i], cloud);
+            //Mat cloud;
+            //depthTo3d(pyramidDepth[i], pyramidCameraMatrix[i], cloud);
+            //cloud = depthTo3d(Vec2Mat_f(pyramidDepth[i].to_vector(), pyramidDepth[i].value_floating.rows(), pyramidDepth[i].value_floating.cols()), pyramidCameraMatrix[i]);
+            vector<FixedPointVector> cloud = depthTo3d(pyramidDepth[i], pyramidCameraMatrix[i]);
             pyramidCloud[i] = cloud;
         }
     }
@@ -396,7 +613,7 @@ void preparePyramidMask(const Mat& mask, const std::vector<Mat>& pyramidDepth, f
         for(size_t i = 0; i < pyramidMask.size(); i++)
         {
             Mat levelDepth = pyramidDepth[i].clone();
-            patchNaNs(levelDepth, 0);
+            //patchNaNs(levelDepth, 0);
 
             Mat& levelMask = pyramidMask[i];
             levelMask &= (levelDepth > minDepth) & (levelDepth < maxDepth);
@@ -576,8 +793,8 @@ void checkDepth(const Mat& depth, const Size& imageSize)
         CV_Error(Error::StsBadSize, "Depth is empty.");
     if(depth.size() != imageSize)
         CV_Error(Error::StsBadSize, "Depth has to have the size equal to the image size.");
-    if(depth.type() != CV_32FC1)
-        CV_Error(Error::StsBadSize, "Depth type has to be CV_32FC1.");
+    //if(depth.type() != CV_32FC1)
+    //    CV_Error(Error::StsBadSize, "Depth type has to be CV_32FC1.");
 }
 
 static inline
@@ -615,9 +832,44 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
    
     preparePyramidImage(frame->image, frame->pyramidImage, iterCounts.total());
 
-    preparePyramidDepth(frame->depth, frame->pyramidDepth, iterCounts.total());
+    //preparePyramidDepth(frame->depth, frame->pyramidDepth, iterCounts.total());
 
-    preparePyramidCloud(frame->pyramidDepth, cameraMatrix, frame->pyramidCloud);
+    vector<FixedPointMatrix> pyramidDepth_test;
+    buildpy(frame->depth, pyramidDepth_test, iterCounts.total());
+    if(frame->pyramidDepth.empty())
+    {
+        for( int i = 0; i < iterCounts.total(); i++ )
+        {
+            frame->pyramidDepth.push_back(Vec2Mat_f(pyramidDepth_test[i].to_vector(), pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
+        }  
+    }
+    //cout << frame->pyramidDepth[0].size() << endl;
+    //cout << frame->pyramidDepth[1].size() << endl;
+    //cout << frame->pyramidDepth[2].size() << endl;
+    //cout << frame->pyramidDepth[3].size() << endl;
+    //cout << pyramidDepth_test[0].to_floating().size() << endl;
+    //cout << pyramidDepth_test[0].value_floating.rows() << endl;
+    //cout << pyramidDepth_test[0].value_floating.cols() << endl;
+    //cout << pyramidDepth_test[1].value_floating.rows() << endl;
+    //cout << pyramidDepth_test[1].value_floating.cols() << endl;
+    //cout << pyramidDepth_test[2].value_floating.rows() << endl;
+    //cout << pyramidDepth_test[2].value_floating.cols() << endl;
+    //cout << pyramidDepth_test[3].value_floating.rows() << endl;
+    //cout << pyramidDepth_test[3].value_floating.cols() << endl;
+    //exit(1);
+
+   
+
+    //preparePyramidCloud(frame->pyramidDepth, cameraMatrix, frame->pyramidCloud);
+    vector<vector<FixedPointVector>> pyramidCloud_test;
+    preparePyramidCloud(pyramidDepth_test, cameraMatrix, pyramidCloud_test);
+    if(frame->pyramidCloud.empty())
+    {
+        for( int i = 0; i < iterCounts.total(); i++ )
+        {
+            frame->pyramidCloud.push_back(PVec2Mat_f(pyramidCloud_test[i], pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
+        }  
+    }
 
     if(cacheType & OdometryFrame::CACHE_DST)
     {
@@ -628,9 +880,30 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
             //else
             //{
                 normalsComputer(frame->pyramidCloud[0], frame->depth.rows, frame->depth.cols, frame->normals);
+                //vector<FixedPointVector> normals_test = normalsComputer(pyramidCloud_test[0], frame->depth.rows, frame->depth.cols);
+                //frame->normals = PVec2Mat_f(normals_test, frame->depth.rows, frame->depth.cols);
             //}
         }
+        //cout << "normal done" << endl;
         checkNormals(frame->normals, frame->depth.size());
+        //cout << frame->normals << endl;
+        ////cout << frame->pyramidCloud[0] << endl;
+        ////cout << frame->pyramidCloud_test[0] << endl;
+        //cout << frame->normals.size() << endl;
+        ////cout << frame->normals.at<Vec3f>(0,0) << endl;
+        ////cout << frame->normals.at<Vec3f>(429,638) << endl;
+        ////cout << frame->normals.at<Vec3f>(430,638) << endl;
+        ////cout << frame->normals.at<Vec3f>(431,638) << endl;
+        ////cout << frame->normals.at<Vec3f>(638,429) << endl;
+        ////cout << frame->normals.at<Vec3f>(638,430) << endl;
+        ////cout << frame->normals.at<Vec3f>(638,431) << endl;
+        ////cout << frame->normals.at<Vec3f>(479,638) << endl;
+        //cout << frame->normals.at<Vec3f>(478,638) << endl;
+        //cout << frame->normals.at<Vec3f>(478,639) << endl;
+        //cout << frame->normals.at<Vec3f>(478,590) << endl;
+        //cout << frame->normals.at<Vec3f>(478,589) << endl;
+        //cout << frame->normals.at<Vec3f>(478,588) << endl;
+        //exit(1);
 
         preparePyramidNormals(frame->normals, frame->pyramidDepth, frame->pyramidNormals);
 
@@ -658,6 +931,8 @@ static
 void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
                      const Mat& depth0, const Mat& validMask0,
                      const Mat& depth1, const Mat& selectMask1, float maxDepthDiff,
+                     //const vector<FixedPointScalar>& depth0, const Mat& validMask0,
+                     //const vector<FixedPointScalar>& depth1, const Mat& selectMask1, float maxDepthDiff,
                      Mat& _corresps)
 {
 
@@ -684,6 +959,8 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   vector<FixedPointScalar> d1_vec;
   d0_vec = f_Mat2Vec(depth0, fpconfig);//float
   d1_vec = f_Mat2Vec(depth1, fpconfig);//float
+  //d0_vec = depth0;
+  //d1_vec = depth1;
 
   //FixedPointScalar RK_inv_00 ((Rt_vec[0]*fx_inv).value, fpconfig);
   //FixedPointScalar RK_inv_01 ((Rt_vec[1]*fy_inv).value, fpconfig);
@@ -1131,7 +1408,7 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
     //FixedPointScalar sigma_final( (int64_t)(sqrt((sigma/correspsCount).value) * (1LL<<shift_half)) ,  fpconfig);
     //FixedPointScalar sigma_final((sigma/correspsCount).sqrt().value ,  fpconfig);
     FixedPointScalar sigma_final = (sigma/correspsCount).sqrt();
-    //cout << sigma_final.value_floating << endl;
+    //cout << "test: " << sigma_final.value_floating << endl;
     //cout << sigma_final.to_floating() << endl;
 
     //std::vector<float> A_buf(transformDim);
@@ -1606,6 +1883,8 @@ bool Odometry::compute(Ptr<OdometryFrame>& srcFrame, Ptr<OdometryFrame>& dstFram
         const Mat& levelCameraMatrix_inv = levelCameraMatrix.inv(DECOMP_SVD);
         const Mat& srcLevelDepth = srcFrame->pyramidDepth[level];
         const Mat& dstLevelDepth = dstFrame->pyramidDepth[level];
+        //const Vector<FixedPointScalar>& srcLevelDepth = srcFrame->pyramidDepth[level].to_vector();
+        //const Vector<FixedPointScalar>& dstLevelDepth = dstFrame->pyramidDepth[level].to_vector();
 
         const double fx = levelCameraMatrix.at<double>(0,0);
         const double fy = levelCameraMatrix.at<double>(1,1);
@@ -1627,7 +1906,7 @@ bool Odometry::compute(Ptr<OdometryFrame>& srcFrame, Ptr<OdometryFrame>& dstFram
                             srcLevelDepth, srcFrame->pyramidMask[level], dstLevelDepth, dstFrame->pyramidNormalsMask[level],
                             maxDepthDiff, corresps_icp);
             //cout << corresps_icp << endl;
-            //cout << "corresps_icp " << corresps_icp.rows << endl;
+            cout << "corresps_icp " << corresps_icp.rows << endl;
             //if(iter == 1)
             //  exit(1);
             //Mat AtA(transformDim, transformDim, CV_64FC1, Scalar(0)), AtB(transformDim, 1, CV_64FC1, Scalar(0));
@@ -1665,6 +1944,12 @@ bool Odometry::compute(Ptr<OdometryFrame>& srcFrame, Ptr<OdometryFrame>& dstFram
             //    break;
             computeProjectiveMatrix(ksi, currRt);
             resultRt = currRt * resultRt;
+            cout << AtA << endl;
+            cout << AtB << endl;
+            cout << "currRt " << currRt << endl;
+            cout << "resultRt " << resultRt << endl;
+            if(iter == 1)
+              exit(1);
             if(cvIsNaN(ksi.at<float>(0,0)))
             {
                 cout << "ksi " << ksi << endl;

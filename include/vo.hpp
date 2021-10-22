@@ -3,6 +3,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core/utility.hpp>
 
+#include "fixed_point_util.hpp"
+
 #define FIX_POINT 0
 
 using namespace cv;
@@ -60,6 +62,8 @@ using namespace cv;
 
     std::vector<Mat> pyramidNormals;
     std::vector<Mat> pyramidNormalsMask;
+
+    std::vector<std::vector<FixedPointVector>>  pyramidNormals_test;
   };
 
   class Odometry

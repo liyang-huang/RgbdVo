@@ -742,8 +742,10 @@ void FixedPointMatrix::assign(
 	value(row, col) = object.value;
 }
 FixedPointScalar FixedPointMatrix::operator()(
-	const int& row,
-	const int& col) {
+        //const int& row,
+        //const int& col) {
+	int row,
+	int col) {
 	FixedPointScalar scalar(value_floating(row, col), config);
 	scalar.set_value(value(row, col), config);
 	return scalar;

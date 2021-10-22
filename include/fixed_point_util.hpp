@@ -193,7 +193,8 @@ public:
 	~FixedPointMatrix() {};
 	void check_bit_width();
 	void assign(const FixedPointScalar &object, const int& row, const int& col);
-	FixedPointScalar operator()(const int& row, const int& col);
+	//FixedPointScalar operator()(const int& row, const int& col);
+	FixedPointScalar operator()(int row, int col);
 	FIXP_MATRIX_TYPE to_floating();
 	std::vector<FixedPointScalar> to_vector() const;
 };

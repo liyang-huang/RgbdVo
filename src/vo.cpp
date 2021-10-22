@@ -6,7 +6,7 @@
 #include <gmp.h>
 
 #include "vo.hpp"
-#include "fixed_point_util.hpp"
+//#include "fixed_point_util.hpp"
 
 using namespace cv;
 using namespace std;
@@ -31,7 +31,7 @@ void setDefaultMinGradientMagnitudes(Mat& minGradientMagnitudes)
 {
     minGradientMagnitudes = Mat(Vec4f(10,10,10,10));
 }
-/*
+
 static
 //vector<FixedPointVector> normalsComputer(const vector<FixedPointVector>& p3d_vec, int rows, int cols) 
 vector<FixedPointVector> normalsComputer(vector<FixedPointVector>& p3d_vec, int rows, int cols) 
@@ -60,106 +60,18 @@ vector<FixedPointVector> normalsComputer(vector<FixedPointVector>& p3d_vec, int 
             FixedPointScalar n2_z = n_z*n_z;
             FixedPointScalar norm_pre = n2_x + n2_y + n2_z;
             FixedPointScalar norm = (norm_pre).sqrt();
-            //if(!cvIsNaN(norm.value_floating))
             if(!(norm.value==0))
             {
                 FixedPointScalar n_x_final = n_x / norm;
-                cout << "n.x: " << n_x.value_floating << endl;
-                cout << "n.y: " << n_y.value_floating << endl;
-                cout << "n.z: " << n_z.value_floating << endl;
-                //cout << "norm+++: " << norm.value_floating << endl;
-                //cout << "n_final.x: " << n_x_final.value_floating << endl;
                 FixedPointScalar n_y_final = n_y / norm;
                 FixedPointScalar n_z_final = n_z / norm;
                 FixedPointVector normal(n_x_final, n_y_final, n_z_final);   
                 normals[y*cols + x] = normal;
-                //cout << "n_final.y: " << n_y_final.value_floating << endl;
-                //cout << "n_final.z: " << n_z_final.value_floating << endl;
-                //cout << "liyang test"<< norm_pre.value_floating << endl;
-            }
-            if((x==590)&&(y==478))
-            {
-                cout << "norm: " << norm.value_floating << endl;
-                cout << "norm: " << norm.value << endl;
-                cout << "norm_pre: " << norm_pre.value_floating << endl;
-                cout << "norm_pre: " << norm_pre.value << endl;
-                cout << "n.x: " << n_x.value_floating << endl;
-                cout << "n.y: " << n_y.value_floating << endl;
-                cout << "n.z: " << n_z.value_floating << endl;
-                //cout << "n_final.x: " << n_x_final.value_floating << endl;
-                //cout << "n_final.y: " << n_y_final.value_floating << endl;
-                //cout << "n_final.z: " << n_z_final.value_floating << endl;
-                cout << normals[y*cols + x].x.value_floating << endl;
-                cout << normals[y*cols + x].y.value_floating << endl;
-                cout << normals[y*cols + x].z.value_floating << endl;
-                cout << p3d_vec[y*cols + x].x.value_floating << endl;
-                cout << p3d_vec[y*cols + x].y.value_floating << endl;
-                cout << p3d_vec[y*cols + x].z.value_floating << endl;
-                cout << "du.x: " << du_x.value_floating << endl;
-                cout << "du.y: " << du_y.value_floating << endl;
-                cout << "du.z: " << du_z.value_floating << endl;
-                cout << "dv.x: " << dv_x.value_floating << endl;
-                cout << "dv.y: " << dv_y.value_floating << endl;
-                cout << "dv.z: " << dv_z.value_floating << endl;
-                exit(1);
             }
         }
     }
   }
   return normals;
-}
-*/
-static
-void normalsComputer(const Mat& points3d, int rows, int cols, Mat & normals) 
-{
-  normals.create(points3d.size(), CV_MAKETYPE(points3d.depth(), 3));
-  //for (int y = 0; y < rows - 1; ++y)
-  for (int y = 0; y < rows ; ++y)
-  {
-    //for (int x = 0; x < cols - 1; ++x)
-    for (int x = 0; x < cols ; ++x)
-    {
-    	Vec3f du = points3d.at<Vec3f>(y,x+1) - points3d.at<Vec3f>(y,x);
-    	Vec3f dv = points3d.at<Vec3f>(y+1,x) - points3d.at<Vec3f>(y,x);
-        //normals.at<Vec3f>(y,x) = du.cross(dv);
-        normals.at<Vec3f>(y,x)[0] = (du[1]*dv[2]) - (du[2]*dv[1]);
-        normals.at<Vec3f>(y,x)[1] = (du[2]*dv[0]) - (du[0]*dv[2]);
-        normals.at<Vec3f>(y,x)[2] = (du[0]*dv[1]) - (du[1]*dv[0]);
-    	float norm = sqrt(normals.at<Vec3f>(y,x)[0]*normals.at<Vec3f>(y,x)[0] + normals.at<Vec3f>(y,x)[1]*normals.at<Vec3f>(y,x)[1] +normals.at<Vec3f>(y,x)[2]*normals.at<Vec3f>(y,x)[2]);
-        normals.at<Vec3f>(y,x)[0] = normals.at<Vec3f>(y,x)[0] / norm;
-        normals.at<Vec3f>(y,x)[1] = normals.at<Vec3f>(y,x)[1] / norm;
-        normals.at<Vec3f>(y,x)[2] = normals.at<Vec3f>(y,x)[2] / norm;
-        //if((x==590)&&(y==478))
-        //{
-        //    cout << "norm: " << norm << endl;
-        //    cout << normals.at<Vec3f>(y,x)[0] << endl;
-        //    cout << normals.at<Vec3f>(y,x)[1] << endl;
-        //    cout << normals.at<Vec3f>(y,x)[2] << endl;
-        //    cout << points3d.at<Vec3f>(y,x)[0] << endl;
-        //    cout << points3d.at<Vec3f>(y,x)[1] << endl;
-        //    cout << points3d.at<Vec3f>(y,x)[2] << endl;
-        //    cout << points3d.at<Vec3f>(y,x+1)[0] << endl;
-        //    cout << points3d.at<Vec3f>(y,x+1)[1] << endl;
-        //    cout << points3d.at<Vec3f>(y,x+1)[2] << endl;
-        //    cout << points3d.at<Vec3f>(y+1,x)[0] << endl;
-        //    cout << points3d.at<Vec3f>(y+1,x)[1] << endl;
-        //    cout << points3d.at<Vec3f>(y+1,x)[2] << endl;
-        //    cout << "du.x: " << du[0] << endl;
-        //    cout << "du.y: " << du[1] << endl;
-        //    cout << "du.z: " << du[2] << endl;
-        //    cout << "dv.x: " << dv[0] << endl;
-        //    cout << "dv.y: " << dv[1] << endl;
-        //    cout << "dv.z: " << dv[2] << endl;
-        //    exit(1);
-        //}
-        if((x==cols-1)||(y==rows-1))
-        {
-           normals.at<Vec3f>(y,x)[0] = 0.0;
-           normals.at<Vec3f>(y,x)[1] = 0.0;
-           normals.at<Vec3f>(y,x)[2] = 0.0;
-        }
-    }
-  }
 }
 
 RgbdFrame::RgbdFrame() : ID(-1)
@@ -208,6 +120,8 @@ void OdometryFrame::releasePyramids()
 
     pyramidNormals.clear();
     pyramidNormalsMask.clear();
+
+    pyramidNormals_test.clear();
 }
 
 
@@ -260,31 +174,242 @@ void preparePyramidImage(const Mat& image, std::vector<Mat>& pyramidImage, size_
 }
 
 static
+vector<FixedPointVector> buildDnVec(vector<FixedPointVector>& dat, int rows, int cols)
+{
+    FixedPointScalar zero_fix((FIXP_SCALAR_TYPE)0, fpconfig);
+    FixedPointVector zero_vec(zero_fix, zero_fix, zero_fix);
+    vector<FixedPointVector> zero_mtx((rows+4)*(cols+4), zero_vec);
+    vector<FixedPointVector> dat_filter(rows*cols, zero_vec);
+    vector<FixedPointVector> datDn((rows/2)*(cols/2), zero_vec);
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            zero_mtx[(r+2)*cols + (c+2)].x = dat[r*cols + c].x;
+            zero_mtx[(r+2)*cols + (c+2)].y = dat[r*cols + c].y;
+            zero_mtx[(r+2)*cols + (c+2)].z = dat[r*cols + c].z;
+        }
+    }
+    for (int r = 0; r < rows; r++) {
+        zero_mtx[(r+2)*cols + 0].x = dat[r*cols + 2].x;
+        zero_mtx[(r+2)*cols + 0].y = dat[r*cols + 2].y;
+        zero_mtx[(r+2)*cols + 0].z = dat[r*cols + 2].z;
+        zero_mtx[(r+2)*cols + 1].x = dat[r*cols + 1].x;
+        zero_mtx[(r+2)*cols + 1].y = dat[r*cols + 1].y;
+        zero_mtx[(r+2)*cols + 1].z = dat[r*cols + 1].z;
+        zero_mtx[(r+2)*cols + (cols+2)].x = dat[r*cols + (cols-2)].x;
+        zero_mtx[(r+2)*cols + (cols+2)].y = dat[r*cols + (cols-2)].y;
+        zero_mtx[(r+2)*cols + (cols+2)].z = dat[r*cols + (cols-2)].z;
+        zero_mtx[(r+2)*cols + (cols+3)].x = dat[r*cols + (cols-3)].x;
+        zero_mtx[(r+2)*cols + (cols+3)].y = dat[r*cols + (cols-3)].y;
+        zero_mtx[(r+2)*cols + (cols+3)].z = dat[r*cols + (cols-3)].z;
+    }
+    for (int c = 0; c < cols; c++) {
+        zero_mtx[0*cols + c].x = zero_mtx[4*cols + c].x;
+        zero_mtx[0*cols + c].y = zero_mtx[4*cols + c].y;
+        zero_mtx[0*cols + c].z = zero_mtx[4*cols + c].z;
+        zero_mtx[1*cols + c].x = zero_mtx[3*cols + c].x;
+        zero_mtx[1*cols + c].y = zero_mtx[3*cols + c].y;
+        zero_mtx[1*cols + c].z = zero_mtx[3*cols + c].z;
+        zero_mtx[(rows+2)*cols + c].x = zero_mtx[rows*cols + c].x;
+        zero_mtx[(rows+2)*cols + c].y = zero_mtx[rows*cols + c].y;
+        zero_mtx[(rows+2)*cols + c].z = zero_mtx[rows*cols + c].z;
+        zero_mtx[(rows+3)*cols + c].x = zero_mtx[(rows-1)*cols + c].x;
+        zero_mtx[(rows+3)*cols + c].y = zero_mtx[(rows-1)*cols + c].y;
+        zero_mtx[(rows+3)*cols + c].z = zero_mtx[(rows-1)*cols + c].z;
+    }
+    
+    FixedPointScalar c00((FIXP_SCALAR_TYPE)1, fpconfig);
+    FixedPointScalar c01((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c02((FIXP_SCALAR_TYPE)6, fpconfig);
+    FixedPointScalar c03((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c04((FIXP_SCALAR_TYPE)1, fpconfig);
+    FixedPointScalar c10((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c11((FIXP_SCALAR_TYPE)16, fpconfig);
+    FixedPointScalar c12((FIXP_SCALAR_TYPE)24, fpconfig);
+    FixedPointScalar c13((FIXP_SCALAR_TYPE)16, fpconfig);
+    FixedPointScalar c14((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c20((FIXP_SCALAR_TYPE)6, fpconfig);
+    FixedPointScalar c21((FIXP_SCALAR_TYPE)24, fpconfig);
+    FixedPointScalar c22((FIXP_SCALAR_TYPE)36, fpconfig);
+    FixedPointScalar c23((FIXP_SCALAR_TYPE)24, fpconfig);
+    FixedPointScalar c24((FIXP_SCALAR_TYPE)6, fpconfig);
+    FixedPointScalar d((FIXP_SCALAR_TYPE)256, fpconfig);
+    
+    for (int r = 2; r < rows+2; r++) {
+        for (int c = 2; c < cols+2; c++) {
+            FixedPointScalar c0x = zero_mtx[(r-2)*cols + (c-2)].x*c00 + zero_mtx[(r-2)*cols + (c-1)].x*c01 + zero_mtx[(r-2)*cols + c].x*c02 + zero_mtx[(r-2)*cols + (c+1)].x*c03 + zero_mtx[(r-2)*cols + (c+2)].x*c04 ;
+            FixedPointScalar c0y = zero_mtx[(r-2)*cols + (c-2)].y*c00 + zero_mtx[(r-2)*cols + (c-1)].y*c01 + zero_mtx[(r-2)*cols + c].y*c02 + zero_mtx[(r-2)*cols + (c+1)].y*c03 + zero_mtx[(r-2)*cols + (c+2)].y*c04 ;
+            FixedPointScalar c0z = zero_mtx[(r-2)*cols + (c-2)].z*c00 + zero_mtx[(r-2)*cols + (c-1)].z*c01 + zero_mtx[(r-2)*cols + c].z*c02 + zero_mtx[(r-2)*cols + (c+1)].z*c03 + zero_mtx[(r-2)*cols + (c+2)].z*c04 ;
+            FixedPointScalar c1x = zero_mtx[(r-1)*cols + (c-2)].x*c10 + zero_mtx[(r-1)*cols + (c-1)].x*c11 + zero_mtx[(r-1)*cols + c].x*c12 + zero_mtx[(r-1)*cols + (c+1)].x*c13 + zero_mtx[(r-1)*cols + (c+2)].x*c14 ;
+            FixedPointScalar c1y = zero_mtx[(r-1)*cols + (c-2)].y*c10 + zero_mtx[(r-1)*cols + (c-1)].y*c11 + zero_mtx[(r-1)*cols + c].y*c12 + zero_mtx[(r-1)*cols + (c+1)].y*c13 + zero_mtx[(r-1)*cols + (c+2)].y*c14 ;
+            FixedPointScalar c1z = zero_mtx[(r-1)*cols + (c-2)].z*c10 + zero_mtx[(r-1)*cols + (c-1)].z*c11 + zero_mtx[(r-1)*cols + c].z*c12 + zero_mtx[(r-1)*cols + (c+1)].z*c13 + zero_mtx[(r-1)*cols + (c+2)].z*c14 ;
+            FixedPointScalar c2x = zero_mtx[r*cols + (c-2)].x*c20 + zero_mtx[r*cols + (c-1)].x*c21 + zero_mtx[r*cols + c].x*c22 + zero_mtx[r*cols + (c+1)].x*c23 + zero_mtx[r*cols + (c+2)].x*c24 ;
+            FixedPointScalar c2y = zero_mtx[r*cols + (c-2)].y*c20 + zero_mtx[r*cols + (c-1)].y*c21 + zero_mtx[r*cols + c].y*c22 + zero_mtx[r*cols + (c+1)].y*c23 + zero_mtx[r*cols + (c+2)].y*c24 ;
+            FixedPointScalar c2z = zero_mtx[r*cols + (c-2)].z*c20 + zero_mtx[r*cols + (c-1)].z*c21 + zero_mtx[r*cols + c].z*c22 + zero_mtx[r*cols + (c+1)].z*c23 + zero_mtx[r*cols + (c+2)].z*c24 ;
+            FixedPointScalar c3x = zero_mtx[(r+1)*cols + (c-2)].x*c10 + zero_mtx[(r+1)*cols + (c-1)].x*c11 + zero_mtx[(r+1)*cols + c].x*c12 + zero_mtx[(r+1)*cols + (c+1)].x*c13 + zero_mtx[(r+1)*cols + (c+2)].x*c14 ;
+            FixedPointScalar c3y = zero_mtx[(r+1)*cols + (c-2)].y*c10 + zero_mtx[(r+1)*cols + (c-1)].y*c11 + zero_mtx[(r+1)*cols + c].y*c12 + zero_mtx[(r+1)*cols + (c+1)].y*c13 + zero_mtx[(r+1)*cols + (c+2)].y*c14 ;
+            FixedPointScalar c3z = zero_mtx[(r+1)*cols + (c-2)].z*c10 + zero_mtx[(r+1)*cols + (c-1)].z*c11 + zero_mtx[(r+1)*cols + c].z*c12 + zero_mtx[(r+1)*cols + (c+1)].z*c13 + zero_mtx[(r+1)*cols + (c+2)].z*c14 ;
+            FixedPointScalar c4x = zero_mtx[(r+2)*cols + (c-2)].x*c00 + zero_mtx[(r+2)*cols + (c-1)].x*c01 + zero_mtx[(r+2)*cols + c].x*c02 + zero_mtx[(r+2)*cols + (c+1)].x*c03 + zero_mtx[(r+2)*cols + (c+2)].x*c04 ;
+            FixedPointScalar c4y = zero_mtx[(r+2)*cols + (c-2)].y*c00 + zero_mtx[(r+2)*cols + (c-1)].y*c01 + zero_mtx[(r+2)*cols + c].y*c02 + zero_mtx[(r+2)*cols + (c+1)].y*c03 + zero_mtx[(r+2)*cols + (c+2)].y*c04 ;
+            FixedPointScalar c4z = zero_mtx[(r+2)*cols + (c-2)].z*c00 + zero_mtx[(r+2)*cols + (c-1)].z*c01 + zero_mtx[(r+2)*cols + c].z*c02 + zero_mtx[(r+2)*cols + (c+1)].z*c03 + zero_mtx[(r+2)*cols + (c+2)].z*c04 ;
+            FixedPointScalar c_totalx = c0x + c1x + c2x + c3x + c4x;
+            FixedPointScalar c_totaly = c0y + c1y + c2y + c3y + c4y;
+            FixedPointScalar c_totalz = c0z + c1z + c2z + c3z + c4z;
+            FixedPointScalar c_divx = c_totalx / d;
+            FixedPointScalar c_divy = c_totaly / d;
+            FixedPointScalar c_divz = c_totalz / d;
+
+            FixedPointScalar n2_x = c_divx*c_divx;
+            FixedPointScalar n2_y = c_divy*c_divy;
+            FixedPointScalar n2_z = c_divz*c_divz;
+            FixedPointScalar norm_pre = n2_x + n2_y + n2_z;
+            FixedPointScalar norm = (norm_pre).sqrt();
+            if(!(norm.value==0))
+            {
+                FixedPointScalar n_x_final = c_divx / norm;
+                FixedPointScalar n_y_final = c_divy / norm;
+                FixedPointScalar n_z_final = c_divz / norm;
+                dat_filter[(r-2)*cols + (c-2)].x = n_x_final;
+                dat_filter[(r-2)*cols + (c-2)].y = n_y_final;
+                dat_filter[(r-2)*cols + (c-2)].z = n_z_final;
+            }
+            else
+            {
+                dat_filter[(r-2)*cols + (c-2)].x = zero_fix;
+                dat_filter[(r-2)*cols + (c-2)].y = zero_fix;
+                dat_filter[(r-2)*cols + (c-2)].z = zero_fix;
+            }
+        }
+    }
+
+    for (int r = 0; r < rows/2; r++) {
+        for (int c = 0; c < cols/2; c++) {
+            datDn[r*(cols/2) + c] = dat_filter[r*2*cols + c*2];
+        }
+    }
+    //cout << PVec2Mat_f(zero_mtx, rows+4, cols+4);
+    //cout << PVec2Mat_f(dat_filter, rows, cols);
+    //exit(1);
+    return datDn;
+}
+
+static
+//FixedPointMatrix buildDn(const FixedPointMatrix& dat)
+FixedPointMatrix buildDn(FixedPointMatrix& dat)
+{
+    int rows = dat.value_floating.rows();
+    int cols = dat.value_floating.cols();
+    FixedPointScalar zero_fix((FIXP_SCALAR_TYPE)0, fpconfig);
+    vector<FixedPointScalar> zero_vec((rows+4)*(cols+4), zero_fix);
+    vector<FixedPointScalar> zero_vec2(rows*cols, zero_fix);
+    vector<FixedPointScalar> zero_vec3((rows/2)*(cols/2), zero_fix);
+    FixedPointMatrix zero_mtx (zero_vec, rows+4, cols+4);
+    FixedPointMatrix dat_filter (zero_vec2, rows, cols);
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            zero_mtx.assign(dat(r, c), r+2, c+2);
+        }
+    }
+    for (int r = 0; r < rows; r++) {
+        zero_mtx.assign(dat(r, 2), r+2, 0);
+        zero_mtx.assign(dat(r, 1), r+2, 1);
+        zero_mtx.assign(dat(r, cols-2), r+2, cols+2);
+        zero_mtx.assign(dat(r, cols-3), r+2, cols+3);
+    }
+    for (int c = 0; c < cols; c++) {
+        zero_mtx.assign(zero_mtx(4, c), 0, c);
+        zero_mtx.assign(zero_mtx(3, c), 1, c);
+        zero_mtx.assign(zero_mtx(rows, c), rows+2, c);
+        zero_mtx.assign(zero_mtx(rows-1, c), rows+3, c);
+    }
+
+    FixedPointScalar c00((FIXP_SCALAR_TYPE)1, fpconfig);
+    FixedPointScalar c01((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c02((FIXP_SCALAR_TYPE)6, fpconfig);
+    FixedPointScalar c03((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c04((FIXP_SCALAR_TYPE)1, fpconfig);
+    FixedPointScalar c10((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c11((FIXP_SCALAR_TYPE)16, fpconfig);
+    FixedPointScalar c12((FIXP_SCALAR_TYPE)24, fpconfig);
+    FixedPointScalar c13((FIXP_SCALAR_TYPE)16, fpconfig);
+    FixedPointScalar c14((FIXP_SCALAR_TYPE)4, fpconfig);
+    FixedPointScalar c20((FIXP_SCALAR_TYPE)6, fpconfig);
+    FixedPointScalar c21((FIXP_SCALAR_TYPE)24, fpconfig);
+    FixedPointScalar c22((FIXP_SCALAR_TYPE)36, fpconfig);
+    FixedPointScalar c23((FIXP_SCALAR_TYPE)24, fpconfig);
+    FixedPointScalar c24((FIXP_SCALAR_TYPE)6, fpconfig);
+    FixedPointScalar d((FIXP_SCALAR_TYPE)256, fpconfig);
+    
+    for (int r = 2; r < rows+2; r++) {
+        for (int c = 2; c < cols+2; c++) {
+            FixedPointScalar c0 = zero_mtx(r-2, c-2)*c00 + zero_mtx(r-2, c-1)*c01 + zero_mtx(r-2, c)*c02 + zero_mtx(r-2, c+1)*c03 + zero_mtx(r-2, c+2)*c04 ;
+            FixedPointScalar c1 = zero_mtx(r-1, c-2)*c10 + zero_mtx(r-1, c-1)*c11 + zero_mtx(r-1, c)*c12 + zero_mtx(r-1, c+1)*c13 + zero_mtx(r-1, c+2)*c14 ;
+            FixedPointScalar c2 = zero_mtx(r, c-2)*c20 + zero_mtx(r, c-1)*c21 + zero_mtx(r, c)*c22 + zero_mtx(r, c+1)*c23 + zero_mtx(r, c+2)*c24 ;
+            FixedPointScalar c3 = zero_mtx(r+1, c-2)*c10 + zero_mtx(r+1, c-1)*c11 + zero_mtx(r+1, c)*c12 + zero_mtx(r+1, c+1)*c13 + zero_mtx(r+1, c+2)*c14 ;
+            FixedPointScalar c4 = zero_mtx(r+2, c-2)*c00 + zero_mtx(r+2, c-1)*c01 + zero_mtx(r+2, c)*c02 + zero_mtx(r+2, c+1)*c03 + zero_mtx(r+2, c+2)*c04 ;
+            FixedPointScalar c_total = c0 + c1 + c2 + c3 + c4;
+            FixedPointScalar c_div = c_total / d;
+
+            dat_filter.assign(c_div, r-2, c-2);
+        }
+    }
+    
+    //Mat test = Vec2Mat_f(zero_mtx.to_vector(), zero_mtx.value_floating.rows(), zero_mtx.value_floating.cols());
+    //Mat test2 = Vec2Mat_f(dat.to_vector(), dat.value_floating.rows(), dat.value_floating.cols());
+    //cout << test << endl;
+    //exit(1);
+    FixedPointMatrix datDn (zero_vec3, rows/2, cols/2);
+    for (int r = 0; r < rows/2; r++) {
+        for (int c = 0; c < cols/2; c++) {
+            datDn.assign(dat_filter(r*2, c*2), r, c);
+        }
+    }
+    return datDn;
+}
+
+static
 void buildpy(const Mat& depth, std::vector<FixedPointMatrix>& pyramidDepth, size_t levelCount)
 {
     if(pyramidDepth.empty())
     {
-        Mat tmp;
+        //Mat tmp;
+        //for( int i = 0; i < levelCount; i++ )
+        //{   
+        //    Mat dwn;
+        //    vector<FixedPointScalar> depth_fixp;
+        //    if(i != 0)
+        //    {
+        //        pyrDown(tmp, dwn);
+        //        depth_fixp = f_Mat2Vec(dwn, fpconfig);
+        //        FixedPointMatrix depth_mtx(depth_fixp, dwn.rows, dwn.cols);
+        //        pyramidDepth.push_back(depth_mtx);
+        //        tmp = dwn;
+        //    }
+        //    else
+        //    {
+        //        depth_fixp = f_Mat2Vec(depth, fpconfig);
+        //        FixedPointMatrix depth_mtx(depth_fixp, depth.rows, depth.cols);
+        //        pyramidDepth.push_back(depth_mtx);
+        //        tmp = depth;
+        //    }
+
+        //}
+        vector<FixedPointScalar> depth_fixp;
+        depth_fixp = f_Mat2Vec(depth, fpconfig);
+        FixedPointMatrix depth_mtx(depth_fixp, depth.rows, depth.cols);
         for( int i = 0; i < levelCount; i++ )
         {   
-            Mat dwn;
-            vector<FixedPointScalar> depth_fixp;
             if(i != 0)
             {
-                pyrDown(tmp, dwn);
-                depth_fixp = f_Mat2Vec(dwn, fpconfig);
-                FixedPointMatrix depth_mtx(depth_fixp, dwn.rows, dwn.cols);
-                pyramidDepth.push_back(depth_mtx);
-                tmp = dwn;
+                FixedPointMatrix depthDn = buildDn(depth_mtx);
+                pyramidDepth.push_back(depthDn);
+                depth_mtx = depthDn;
             }
             else
             {
-                depth_fixp = f_Mat2Vec(depth, fpconfig);
-                FixedPointMatrix depth_mtx(depth_fixp, depth.rows, depth.cols);
                 pyramidDepth.push_back(depth_mtx);
-                tmp = depth;
             }
-
         }
     }
 }
@@ -323,125 +448,6 @@ void buildPyramidCameraMatrix(const Mat& cameraMatrix, int levels, std::vector<M
     }
 }
 
-inline void
-rescaleDepth(InputArray in_in, int depth, OutputArray out_out)
-{
-  cv::Mat in = in_in.getMat();
-  CV_Assert(in.type() == CV_64FC1 || in.type() == CV_32FC1 || in.type() == CV_16UC1 || in.type() == CV_16SC1);
-  CV_Assert(depth == CV_64FC1 || depth == CV_32FC1);
-
-  int in_depth = in.depth();
-
-  out_out.create(in.size(), depth);
-  cv::Mat out = out_out.getMat();
-  if (in_depth == CV_16U)
-  {
-    in.convertTo(out, depth, 1 / 1000.0); //convert to float so that it is in meters
-    cv::Mat valid_mask = in == std::numeric_limits<ushort>::min(); // Should we do std::numeric_limits<ushort>::max() too ?
-    out.setTo(std::numeric_limits<float>::quiet_NaN(), valid_mask); //set a$
-  }
-  if (in_depth == CV_16S)
-  {
-    in.convertTo(out, depth, 1 / 1000.0); //convert to float so tha$
-    cv::Mat valid_mask = (in == std::numeric_limits<short>::min()) | (in == std::numeric_limits<short>::max()); // Should we do std::numeric_limits<ushort>::max() too ?
-    out.setTo(std::numeric_limits<float>::quiet_NaN(), valid_mask); //set a$
-  }
-  if ((in_depth == CV_32F) || (in_depth == CV_64F))
-    in.convertTo(out, depth);
-}
-
-template<typename T>
-void
-rescaleDepthTemplated(const Mat& in, Mat& out);
-
-template<>
-inline void
-rescaleDepthTemplated<float>(const Mat& in, Mat& out)
-{
-  rescaleDepth(in, CV_32F, out);
-}
-
-template<>
-inline void
-rescaleDepthTemplated<double>(const Mat& in, Mat& out)
-{
-  rescaleDepth(in, CV_64F, out);
-}
-
-template<typename T>
-void
-depthTo3dNoMask(const cv::Mat& in_depth, const cv::Mat_<T>& K, cv::Mat& points3d)
-{
-  const T inv_fx = T(1) / K(0, 0);
-  const T inv_fy = T(1) / K(1, 1);
-  const T ox = K(0, 2);
-  const T oy = K(1, 2);
-
-  // Build z
-  cv::Mat_<T> z_mat;
-  if (z_mat.depth() == in_depth.depth())
-    z_mat = in_depth;
-  else
-    rescaleDepthTemplated<T>(in_depth, z_mat);
-
-  //cout << "liyang test" << in_depth << endl;
-  //exit(1);
-  // Pre-compute some constants
-  cv::Mat_<T> x_cache(1, in_depth.cols), y_cache(in_depth.rows, 1);
-  T* x_cache_ptr = x_cache[0], *y_cache_ptr = y_cache[0];
-  for (int x = 0; x < in_depth.cols; ++x, ++x_cache_ptr)
-    *x_cache_ptr = (x - ox) * inv_fx;
-  for (int y = 0; y < in_depth.rows; ++y, ++y_cache_ptr)
-    *y_cache_ptr = (y - oy) * inv_fy;
-
-  y_cache_ptr = y_cache[0];
-  for (int y = 0; y < in_depth.rows; ++y, ++y_cache_ptr)
-  {
-    cv::Vec<T, 3>* point = points3d.ptr<cv::Vec<T, 3> >(y);
-    const T* x_cache_ptr_end = x_cache[0] + in_depth.cols;
-    const T* depth = z_mat[y];
-    for (x_cache_ptr = x_cache[0]; x_cache_ptr != x_cache_ptr_end; ++x_cache_ptr, ++point, ++depth)
-    {
-      T z = *depth;
-      (*point)[0] = (*x_cache_ptr) * z;
-      (*point)[1] = (*y_cache_ptr) * z;
-      (*point)[2] = z;
-      //cout << "liyang test" << (*point)[0] << endl;
-      //cout << "liyang test" << (*point)[1] << endl;
-      //cout << "liyang test" << (*point)[2] << endl;
-      //exit(1);
-    }
-  }
-}
-/*
-void
-depthTo3d(InputArray depth_in, InputArray K_in, OutputArray points3d_out)
-{
-  cv::Mat depth = depth_in.getMat();
-  cv::Mat K = K_in.getMat();
-  CV_Assert(K.cols == 3 && K.rows == 3 && (K.depth() == CV_64F || K.depth()==CV_32F));
-  CV_Assert(
-      depth.type() == CV_64FC1 || depth.type() == CV_32FC1 || depth.type() == CV_16UC1 || depth.type() == CV_16SC1);
-
-  // TODO figure out what to do when types are different: convert or reject ?
-  cv::Mat K_new;
-  if ((depth.depth() == CV_32F || depth.depth() == CV_64F) && depth.depth() != K.depth())
-  {
-    K.convertTo(K_new, depth.depth());
-  }
-  else
-    K_new = K;
-
-  // Create 3D points in one go.
-  points3d_out.create(depth.size(), CV_MAKETYPE(K_new.depth(), 3));
-  cv::Mat points3d = points3d_out.getMat();
-  if (K_new.depth() == CV_64F)
-    depthTo3dNoMask<double>(depth, K_new, points3d);
-  else
-    depthTo3dNoMask<float>(depth, K_new, points3d);
-}
-*/
-
 vector<FixedPointVector> depthTo3d(const FixedPointMatrix& depth, const Mat& K)
 {
   vector<FixedPointScalar> cam_fixp;
@@ -463,59 +469,27 @@ vector<FixedPointVector> depthTo3d(const FixedPointMatrix& depth, const Mat& K)
   {
     for (int x = 0; x < depth.value_floating.cols(); ++x)
     {
-         //FIXP_INT_SCALAR_TYPE value_x = x << shift;
-         //FixedPointScalar p_x(value_x, fpconfig);
          FixedPointScalar p_x((FIXP_SCALAR_TYPE)x, fpconfig);
-
          
          p_x = (p_x - cx);
          p_x = p_x * depth_vec[y*depth.value_floating.cols() + x];
          p_x = p_x / fx;
          
-
-         //FIXP_INT_SCALAR_TYPE value_y = y << shift;
-         //FixedPointScalar p_y(value_y, fpconfig);
          FixedPointScalar p_y((FIXP_SCALAR_TYPE)y, fpconfig);
 
          p_y = (p_y - cy) / fy;
          p_y = p_y * depth_vec[y*depth.value_floating.cols() + x];
 
-         //FixedPointScalar p_z(depth_vec[y*depth.cols + x].value, fpconfig);
          FixedPointScalar p_z = depth_vec[y*depth.value_floating.cols() + x];
 
          FixedPointVector p3d(p_x, p_y, p_z);
-         //FixedPointVector p3d;
-         //p3d.set(p_x, p_y, p_z);
          p3d_vec.push_back(p3d);
-         //if((y*depth.cols + x) == 307148)
-         //{
-         //    cout << "test:" << depth_vec[(y*depth.cols + x)].value << endl;
-         //    cout << "x:" << x << endl;
-         //    cout << "y:" << y << endl;
-         //    cout << "p_z:" << p_z.value << endl;
-         //}
     }
   }
-  //int rows = depth.value_floating.rows();
-  //int cols = depth.value_floating.cols();
-  //points3d = PVec2Mat_f(p3d_vec, depth.rows, depth.cols);
-  //FixedPointMatrixP points3d(p3d_vec, rows, cols);
-  //cout << "test:" << depth.rows << endl;
-  //cout << "test:" << depth_vec[307148].value << endl;
-  //cout << "test:" << p3d_vec[307148].x.value << endl;
-  //cout << "test:" << p3d_vec[307148].y.value << endl;
-  //cout << "test:" << p3d_vec[307148].z.value << endl;
-  //cout << "testi:" << points3d.at<Vec3i>(479,588)[0] << endl;
-  //cout << "testi:" << points3d.at<Vec3i>(479,588)[1] << endl;
-  //cout << "testi:" << points3d.at<Vec3i>(479,588)[2] << endl;
-  //exit(1);
-  //return points3d;
   return p3d_vec;
 }
 
 static
-//void preparePyramidCloud(const std::vector<Mat>& pyramidDepth, const Mat& cameraMatrix, std::vector<Mat>& pyramidCloud)
-//void preparePyramidCloud(const std::vector<FixedPointMatrix>& pyramidDepth, const Mat& cameraMatrix, std::vector<Mat>& pyramidCloud)
 void preparePyramidCloud(const std::vector<FixedPointMatrix>& pyramidDepth, const Mat& cameraMatrix, std::vector<std::vector<FixedPointVector>>& pyramidCloud)
 {
     if(!pyramidCloud.empty())
@@ -546,6 +520,44 @@ void preparePyramidCloud(const std::vector<FixedPointMatrix>& pyramidDepth, cons
     }
 }
 
+static
+void preparePyramidNormals(const vector<FixedPointVector>& normals, const vector<FixedPointMatrix>& pyramidDepth, vector<vector<FixedPointVector>>& pyramidNormals)
+{
+    if(!pyramidNormals.empty())
+    {
+        if(pyramidNormals.size() != pyramidDepth.size())
+            CV_Error(Error::StsBadSize, "Incorrect size of pyramidNormals.");
+
+    }
+    else
+    {
+        for( int i = 0; i < pyramidDepth.size(); i++ )
+        {   
+            int rows = pyramidDepth[i].value_floating.rows();
+            int cols = pyramidDepth[i].value_floating.cols();
+            FixedPointScalar zero_fix((FIXP_SCALAR_TYPE)0, fpconfig);
+            FixedPointVector zero_vec(zero_fix, zero_fix, zero_fix);
+            vector<FixedPointVector> zero_mtx(rows*cols, zero_vec);
+            pyramidNormals.push_back(zero_mtx);
+        }
+        for( int i = 0; i < pyramidDepth.size(); i++ )
+        {   
+            if(i != 0)
+            {
+                int rows = pyramidDepth[i-1].value_floating.rows();
+                int cols = pyramidDepth[i-1].value_floating.cols();
+                vector<FixedPointVector> normalDn = buildDnVec(pyramidNormals[i-1], rows, cols);
+                pyramidNormals[i] = normalDn;
+            }
+            else
+            {
+                pyramidNormals[i] = normals;
+            }
+        }
+    }
+}
+
+/*
 static
 void preparePyramidNormals(const Mat& normals, const std::vector<Mat>& pyramidDepth, std::vector<Mat>& pyramidNormals)
 {
@@ -579,7 +591,87 @@ void preparePyramidNormals(const Mat& normals, const std::vector<Mat>& pyramidDe
         }
     }
 }
+*/
 
+static
+void preparePyramidMask(const Mat& mask, const vector<FixedPointMatrix>& pyramidDepth, float minDepth, float maxDepth,
+                        const vector<vector<FixedPointVector>>& pyramidNormal,
+                        std::vector<Mat>& pyramidMask)
+{
+    minDepth = std::max(0.f, minDepth);
+
+    if(!pyramidMask.empty())
+    {
+        if(pyramidMask.size() != pyramidDepth.size())
+            CV_Error(Error::StsBadSize, "Levels count of pyramidMask has to be equal to size of pyramidDepth.");
+
+        //for(size_t i = 0; i < pyramidMask.size(); i++)
+        //{
+        //    CV_Assert(pyramidMask[i].size() == pyramidDepth[i].size());
+        //    CV_Assert(pyramidMask[i].type() == CV_8UC1);
+        //}
+    }
+    else
+    {
+        Mat validMask;
+        if(mask.empty())
+            validMask = Mat(pyramidDepth[0].value_floating.rows(), pyramidDepth[0].value_floating.cols(), CV_8UC1, Scalar(255));
+        else
+            validMask = mask.clone();
+
+        FIXP_INT_SCALAR_TYPE minDepth_fix = static_cast<FIXP_INT_SCALAR_TYPE>(minDepth * (1LL << shift));
+        FIXP_INT_SCALAR_TYPE maxDepth_fix = static_cast<FIXP_INT_SCALAR_TYPE>(maxDepth * (1LL << shift));
+        //cout << "liyang test" << validMask << endl;
+        //exit(1);
+        buildPyramid(validMask, pyramidMask, (int)pyramidDepth.size() - 1);
+
+        for(size_t i = 0; i < pyramidMask.size(); i++)
+        {
+            //Mat levelDepth = Vec2Mat_f(pyramidDepth[i].to_vector(), pyramidDepth[i].value_floating.rows(), pyramidDepth[i].value_floating.cols());
+            //patchNaNs(levelDepth, 0);
+
+            Mat& levelMask = pyramidMask[i];
+            //levelMask &= (levelDepth > minDepth) & (levelDepth < maxDepth);
+            for (int r = 0; r < pyramidDepth[i].value_floating.rows(); r++) {
+                for (int c = 0; c < pyramidDepth[i].value_floating.cols(); c++) {
+                    if((pyramidDepth[i].value(r, c) > minDepth_fix) && (pyramidDepth[i].value(r, c) < maxDepth_fix))
+                    //if((pyramidDepth[i].value_floating(r, c) > minDepth) && (pyramidDepth[i].value_floating(r, c) < maxDepth))
+                        levelMask.at<uchar>(r, c) = 255;
+                    else
+                        levelMask.at<uchar>(r, c) = 0;
+                }
+            }
+            //cout << "liyang test" << levelMask << endl;
+            //cout << "liyang test" << pyramidDepth[i].value_floating.rows() << endl;
+            //cout << "liyang test" << pyramidDepth[i].value_floating.cols() << endl;
+            //cout << "liyang test" << maxDepth_fix << endl;
+            //cout << "liyang test" << minDepth_fix << endl;
+            //cout << "liyang test" << maxDepth << endl;
+            //cout << "liyang test" << pyramidDepth[i].value_floating(479, 639) << endl;
+            //cout << "liyang test" << pyramidDepth[i].value(479, 639) << endl;
+            //exit(1);
+
+            //if(!pyramidNormal.empty())
+            //{
+            //    //CV_Assert(pyramidNormal[i].type() == CV_32FC3);
+            //    //CV_Assert(pyramidNormal[i].size() == pyramidDepth[i].size());
+            //    Mat levelNormal = PVec2Mat_f(pyramidNormal[i], pyramidDepth[i].value_floating.rows(), pyramidDepth[i].value_floating.cols());
+
+            //    Mat validNormalMask = levelNormal == levelNormal; // otherwise it's Nan
+            //    //cout << "liyang test" << validNormalMask << endl;
+            //    //exit(1);
+            //    CV_Assert(validNormalMask.type() == CV_8UC3);
+
+            //    std::vector<Mat> channelMasks;
+            //    split(validNormalMask, channelMasks);
+            //    validNormalMask = channelMasks[0] & channelMasks[1] & channelMasks[2];
+
+            //    levelMask &= validNormalMask;
+            //}
+        }
+    }
+}
+/*
 static
 void preparePyramidMask(const Mat& mask, const std::vector<Mat>& pyramidDepth, float minDepth, float maxDepth,
                         const std::vector<Mat>& pyramidNormal,
@@ -636,7 +728,7 @@ void preparePyramidMask(const Mat& mask, const std::vector<Mat>& pyramidDepth, f
         }
     }
 }
-
+*/
 static
 void preparePyramidSobel(const std::vector<Mat>& pyramidImage, int dx, int dy, std::vector<Mat>& pyramidSobel)
 {
@@ -746,8 +838,8 @@ void preparePyramidNormalsMask(const std::vector<Mat>& pyramidNormals, const std
 
         for(size_t i = 0; i < pyramidNormalsMask.size(); i++)
         {
-            CV_Assert(pyramidNormalsMask[i].size() == pyramidMask[i].size());
-            CV_Assert(pyramidNormalsMask[i].type() == pyramidMask[i].type());
+            //CV_Assert(pyramidNormalsMask[i].size() == pyramidMask[i].size());
+            //CV_Assert(pyramidNormalsMask[i].type() == pyramidMask[i].type());
         }
     }
     else
@@ -758,20 +850,20 @@ void preparePyramidNormalsMask(const std::vector<Mat>& pyramidNormals, const std
         {
             pyramidNormalsMask[i] = pyramidMask[i].clone();
             Mat& normalsMask = pyramidNormalsMask[i];
-            for(int y = 0; y < normalsMask.rows; y++)
-            {
-                const Vec3f *normals_row = pyramidNormals[i].ptr<Vec3f>(y);
-                uchar *normalsMask_row = pyramidNormalsMask[i].ptr<uchar>(y);
-                for(int x = 0; x < normalsMask.cols; x++)
-                {
-                    Vec3f n = normals_row[x];
-                    if(cvIsNaN(n[0]))
-                    {
-                        CV_DbgAssert(cvIsNaN(n[1]) && cvIsNaN(n[2]));
-                        normalsMask_row[x] = 0;
-                    }
-                }
-            }
+            //for(int y = 0; y < normalsMask.rows; y++)
+            //{
+            //    const Vec3f *normals_row = pyramidNormals[i].ptr<Vec3f>(y);
+            //    uchar *normalsMask_row = pyramidNormalsMask[i].ptr<uchar>(y);
+            //    for(int x = 0; x < normalsMask.cols; x++)
+            //    {
+            //        Vec3f n = normals_row[x];
+            //        if(cvIsNaN(n[0]))
+            //        {
+            //            CV_DbgAssert(cvIsNaN(n[1]) && cvIsNaN(n[2]));
+            //            normalsMask_row[x] = 0;
+            //        }
+            //    }
+            //}
             randomSubsetOfMask(normalsMask, (float)maxPointsPart);
         }
     }
@@ -843,23 +935,6 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
             frame->pyramidDepth.push_back(Vec2Mat_f(pyramidDepth_test[i].to_vector(), pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
         }  
     }
-    //cout << frame->pyramidDepth[0].size() << endl;
-    //cout << frame->pyramidDepth[1].size() << endl;
-    //cout << frame->pyramidDepth[2].size() << endl;
-    //cout << frame->pyramidDepth[3].size() << endl;
-    //cout << pyramidDepth_test[0].to_floating().size() << endl;
-    //cout << pyramidDepth_test[0].value_floating.rows() << endl;
-    //cout << pyramidDepth_test[0].value_floating.cols() << endl;
-    //cout << pyramidDepth_test[1].value_floating.rows() << endl;
-    //cout << pyramidDepth_test[1].value_floating.cols() << endl;
-    //cout << pyramidDepth_test[2].value_floating.rows() << endl;
-    //cout << pyramidDepth_test[2].value_floating.cols() << endl;
-    //cout << pyramidDepth_test[3].value_floating.rows() << endl;
-    //cout << pyramidDepth_test[3].value_floating.cols() << endl;
-    //exit(1);
-
-   
-
     //preparePyramidCloud(frame->pyramidDepth, cameraMatrix, frame->pyramidCloud);
     vector<vector<FixedPointVector>> pyramidCloud_test;
     preparePyramidCloud(pyramidDepth_test, cameraMatrix, pyramidCloud_test);
@@ -873,19 +948,22 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
 
     if(cacheType & OdometryFrame::CACHE_DST)
     {
+        vector<FixedPointVector> normals_test; 
         if(frame->normals.empty())
         {
             //if(!frame->pyramidNormals.empty())
-            //    frame->normals = frame->pyramidNormals[0];
-            //else
-            //{
-                normalsComputer(frame->pyramidCloud[0], frame->depth.rows, frame->depth.cols, frame->normals);
-                //vector<FixedPointVector> normals_test = normalsComputer(pyramidCloud_test[0], frame->depth.rows, frame->depth.cols);
+                //frame->normals = frame->pyramidNormals[0];
+            if(!frame->pyramidNormals_test.empty())
+                normals_test = frame->pyramidNormals_test[0];
+            else
+            {
+                //normalsComputer(frame->pyramidCloud[0], frame->depth.rows, frame->depth.cols, frame->normals);
+                normals_test = normalsComputer(pyramidCloud_test[0], frame->depth.rows, frame->depth.cols);
                 //frame->normals = PVec2Mat_f(normals_test, frame->depth.rows, frame->depth.cols);
-            //}
+            }
         }
         //cout << "normal done" << endl;
-        checkNormals(frame->normals, frame->depth.size());
+        //checkNormals(frame->normals, frame->depth.size());
         //cout << frame->normals << endl;
         ////cout << frame->pyramidCloud[0] << endl;
         ////cout << frame->pyramidCloud_test[0] << endl;
@@ -905,10 +983,23 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
         //cout << frame->normals.at<Vec3f>(478,588) << endl;
         //exit(1);
 
-        preparePyramidNormals(frame->normals, frame->pyramidDepth, frame->pyramidNormals);
+        //preparePyramidNormals(frame->normals, frame->pyramidDepth, frame->pyramidNormals);
+        //vector<vector<FixedPointVector>> pyramidNormals_test; 
+        //preparePyramidNormals(normals_test, pyramidDepth_test, pyramidNormals_test);
+        preparePyramidNormals(normals_test, pyramidDepth_test, frame->pyramidNormals_test);
+        if(frame->pyramidNormals.empty())
+        {
+            for( int i = 0; i < iterCounts.total(); i++ )
+            {
+                //frame->pyramidNormals.push_back(PVec2Mat_f(pyramidNormals_test[i], pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
+                frame->pyramidNormals.push_back(PVec2Mat_f(frame->pyramidNormals_test[i], pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
+            }  
+        }
 
-        preparePyramidMask(frame->mask, frame->pyramidDepth, (float)minDepth, (float)maxDepth,
-                           frame->pyramidNormals, frame->pyramidMask);
+        //preparePyramidMask(frame->mask, frame->pyramidDepth, (float)minDepth, (float)maxDepth,
+        //                   frame->pyramidNormals, frame->pyramidMask);
+        preparePyramidMask(frame->mask, pyramidDepth_test, (float)minDepth, (float)maxDepth,
+                           frame->pyramidNormals_test, frame->pyramidMask);
 
         //cout << "liyang test" << frame->mask << endl;
         //exit(1);
@@ -921,8 +1012,10 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
         preparePyramidNormalsMask(frame->pyramidNormals, frame->pyramidMask, maxPointsPart, frame->pyramidNormalsMask);
     }
     else
-        preparePyramidMask(frame->mask, frame->pyramidDepth, (float)minDepth, (float)maxDepth,
-                           frame->pyramidNormals, frame->pyramidMask);
+        //preparePyramidMask(frame->mask, frame->pyramidDepth, (float)minDepth, (float)maxDepth,
+        //                   frame->pyramidNormals, frame->pyramidMask);
+        preparePyramidMask(frame->mask, pyramidDepth_test, (float)minDepth, (float)maxDepth,
+                           frame->pyramidNormals_test, frame->pyramidMask);
 
     return frame->image.size();
 }
@@ -942,14 +1035,6 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   FixedPointScalar cy (K.at<float>(1,2), fpconfig);//float
   FixedPointScalar fx_inv (K_inv.at<float>(0,0), fpconfig);//float
   FixedPointScalar fy_inv (K_inv.at<float>(1,1), fpconfig);//float
-  //int64_t fx_inv_tmp = (1LL << (2*shift)) / fx.value;
-  //int64_t fy_inv_tmp = (1LL << (2*shift)) / fy.value;
-  //FixedPointScalar fx_inv (fx_inv_tmp, fpconfig);
-  //FixedPointScalar fy_inv (fy_inv_tmp, fpconfig);
-  //int64_t cx_inv_tmp = (cx * fx_inv).value * -1;
-  //int64_t cy_inv_tmp = (cy * fy_inv).value * -1;
-  //FixedPointScalar cx_inv (cx_inv_tmp, fpconfig);
-  //FixedPointScalar cy_inv (cy_inv_tmp, fpconfig);
   FixedPointScalar cx_inv (K_inv.at<float>(0,2), fpconfig);//float
   FixedPointScalar cy_inv (K_inv.at<float>(1,2), fpconfig);//float
 
@@ -959,18 +1044,7 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   vector<FixedPointScalar> d1_vec;
   d0_vec = f_Mat2Vec(depth0, fpconfig);//float
   d1_vec = f_Mat2Vec(depth1, fpconfig);//float
-  //d0_vec = depth0;
-  //d1_vec = depth1;
 
-  //FixedPointScalar RK_inv_00 ((Rt_vec[0]*fx_inv).value, fpconfig);
-  //FixedPointScalar RK_inv_01 ((Rt_vec[1]*fy_inv).value, fpconfig);
-  //FixedPointScalar RK_inv_02 ((Rt_vec[0]*cx_inv + Rt_vec[1]*cy_inv + Rt_vec[2]).value, fpconfig);
-  //FixedPointScalar RK_inv_10 ((Rt_vec[4]*fx_inv).value, fpconfig);
-  //FixedPointScalar RK_inv_11 ((Rt_vec[5]*fy_inv).value, fpconfig);
-  //FixedPointScalar RK_inv_12 ((Rt_vec[4]*cx_inv + Rt_vec[5]*cy_inv + Rt_vec[6]).value, fpconfig);
-  //FixedPointScalar RK_inv_20 ((Rt_vec[8]*fx_inv).value, fpconfig);
-  //FixedPointScalar RK_inv_21 ((Rt_vec[9]*fy_inv).value, fpconfig);
-  //FixedPointScalar RK_inv_22 ((Rt_vec[8]*cx_inv + Rt_vec[9]*cy_inv + Rt_vec[10]).value, fpconfig);
   FixedPointScalar RK_inv_00 = Rt_vec[0]*fx_inv;
   FixedPointScalar RK_inv_01 = Rt_vec[1]*fy_inv;
   FixedPointScalar RK_inv_02 = Rt_vec[0]*cx_inv + Rt_vec[1]*cy_inv + Rt_vec[2];
@@ -981,27 +1055,15 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   FixedPointScalar RK_inv_21 = Rt_vec[9]*fy_inv;
   FixedPointScalar RK_inv_22 = Rt_vec[8]*cx_inv + Rt_vec[9]*cy_inv + Rt_vec[10];
   
-  //FixedPointScalar KRK_inv_00 ((fx*RK_inv_00 + cx*RK_inv_20).value, fpconfig);
-  //FixedPointScalar KRK_inv_01 ((fx*RK_inv_01 + cx*RK_inv_21).value, fpconfig);
-  //FixedPointScalar KRK_inv_02 ((fx*RK_inv_02 + cx*RK_inv_22).value, fpconfig);
-  //FixedPointScalar KRK_inv_10 ((fy*RK_inv_10 + cy*RK_inv_20).value, fpconfig);
-  //FixedPointScalar KRK_inv_11 ((fy*RK_inv_11 + cy*RK_inv_21).value, fpconfig);
-  //FixedPointScalar KRK_inv_12 ((fy*RK_inv_12 + cy*RK_inv_22).value, fpconfig);
   FixedPointScalar KRK_inv_00 = fx*RK_inv_00 + cx*RK_inv_20;
   FixedPointScalar KRK_inv_01 = fx*RK_inv_01 + cx*RK_inv_21;
   FixedPointScalar KRK_inv_02 = fx*RK_inv_02 + cx*RK_inv_22;
   FixedPointScalar KRK_inv_10 = fy*RK_inv_10 + cy*RK_inv_20;
   FixedPointScalar KRK_inv_11 = fy*RK_inv_11 + cy*RK_inv_21;
   FixedPointScalar KRK_inv_12 = fy*RK_inv_12 + cy*RK_inv_22;
-  //FixedPointScalar KRK_inv_20 ((RK_inv_20).value, fpconfig);
-  //FixedPointScalar KRK_inv_21 ((RK_inv_21).value, fpconfig);
-  //FixedPointScalar KRK_inv_22 ((RK_inv_22).value, fpconfig);
   FixedPointScalar KRK_inv_20 = RK_inv_20;
   FixedPointScalar KRK_inv_21 = RK_inv_21;
   FixedPointScalar KRK_inv_22 = RK_inv_22;
-  //FixedPointScalar Kt_0 ((fx*Rt_vec[3] + cx*Rt_vec[11]).value, fpconfig);
-  //FixedPointScalar Kt_1 ((fy*Rt_vec[7] + cy*Rt_vec[11]).value, fpconfig);
-  //FixedPointScalar Kt_2 ((Rt_vec[11]).value, fpconfig);
   FixedPointScalar Kt_0 = fx*Rt_vec[3] + cx*Rt_vec[11];
   FixedPointScalar Kt_1 = fy*Rt_vec[7] + cy*Rt_vec[11];
   FixedPointScalar Kt_2 = Rt_vec[11];
@@ -1017,20 +1079,15 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
          if(selectMask1.at<uchar>(v1, u1))
          {
              FixedPointScalar d1 = d1_vec[v1*cols + u1];
-             //FixedPointScalar u1_shift ((int64_t)(u1 * (1LL << shift)), fpconfig);
-             //FixedPointScalar v1_shift ((int64_t)(v1 * (1LL << shift)), fpconfig);
              FixedPointScalar u1_shift ((FIXP_SCALAR_TYPE)u1, fpconfig);
              FixedPointScalar v1_shift ((FIXP_SCALAR_TYPE)v1, fpconfig);
-             //FixedPointScalar transformed_d1_shift ((KRK_inv_20*u1_shift + KRK_inv_21*v1_shift + KRK_inv_22).value, fpconfig);
              FixedPointScalar transformed_d1_shift = KRK_inv_20*u1_shift + KRK_inv_21*v1_shift + KRK_inv_22;
              transformed_d1_shift = (d1*transformed_d1_shift) + Kt_2;
              if(transformed_d1_shift.value > 0)
              {
-                 //FixedPointScalar u0_shift ((KRK_inv_00*u1_shift + KRK_inv_01*v1_shift + KRK_inv_02).value, fpconfig);
                  FixedPointScalar u0_shift = KRK_inv_00*u1_shift + KRK_inv_01*v1_shift + KRK_inv_02;
                  FixedPointScalar ttt = KRK_inv_00*u1_shift + KRK_inv_01*v1_shift;
                  FixedPointScalar test_shift = ttt + KRK_inv_02;
-                 //FixedPointScalar v0_shift ((KRK_inv_10*u1_shift + KRK_inv_11*v1_shift + KRK_inv_12).value, fpconfig);
                  FixedPointScalar v0_shift = KRK_inv_10*u1_shift + KRK_inv_11*v1_shift + KRK_inv_12;
                  u0_shift = (d1*u0_shift) + Kt_0;
                  v0_shift = (d1*v0_shift) + Kt_1;
@@ -1038,33 +1095,9 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
                  v0_shift = v0_shift / transformed_d1_shift;
                  int u0 = (int)round(u0_shift.value_floating);
                  int v0 = (int)round(v0_shift.value_floating); 
-                        //if(u1==18 && v1==7)
-                        //{
-                        //   cout << u0_shift.value_floating << endl;
-                        //   cout << v0_shift.value_floating << endl;
-                        //  cout << "u0 "  << u0 << endl;
-                        //  cout << "v0 "  << v0 << endl;
-                        //  cout << "u1 "  << u1 << endl;
-                        //  cout << "v1 "  << v1 << endl;
-                        //  cout << "KRK "  << KRK_inv_00.value << endl;
-                        //}
                  if(r.contains(Point(u0,v0)))
                  {
                      FixedPointScalar d0 = d0_vec[v0*cols + u0];
-                           //if(u1==71 && v1==8)
-                           ////if(u0==71 && v0==8)
-                           //{
-                           //  cout << u0 << endl;
-                           //  cout << v0 << endl;
-                           //  cout << u1 << endl;
-                           //  cout << v1 << endl;
-                           //  cout << u0_shift.value_floating << endl;
-                           //  cout << v0_shift.value_floating << endl;
-                           //  cout << validMask0.at<uchar>(v0, u0) << endl;
-                           //  cout << std::abs(transformed_d1_shift.value - d0.value) << endl;
-                           //  cout << maxDepthDiff*(1LL<<shift) << endl;
-                           //  exit(1);
-                           //}
                      if(validMask0.at<uchar>(v0, u0) && std::abs(transformed_d1_shift.value - d0.value) <= (maxDepthDiff*(1LL<<shift)))
                      {
                             Vec2s& c = corresps.at<Vec2s>(v0,u0);
@@ -1083,15 +1116,6 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
                                 correspCount++;
 
                             c = Vec2s((short)u1, (short)v1);
-                            //if(u0==72 && v0==58)
-                            //{
-                            //cout << u0 << endl;
-                            //cout << v0 << endl;
-                            //cout << u1 << endl;
-                            //cout << v1 << endl;
-                            //cout << c << endl;
-                            //exit(1);
-                            //}
 
                      }
                  }
@@ -1117,131 +1141,6 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   //exit(1);
 }
 
-/*
-static
-void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
-                     const Mat& depth0, const Mat& validMask0,
-                     const Mat& depth1, const Mat& selectMask1, float maxDepthDiff,
-                     Mat& _corresps)
-{
-    //CV_Assert(K.type() == CV_64FC1);
-    //CV_Assert(K_inv.type() == CV_64FC1);
-    //CV_Assert(Rt.type() == CV_64FC1);
-    CV_Assert(K.type() == CV_32FC1);
-    CV_Assert(K_inv.type() == CV_32FC1);
-    CV_Assert(Rt.type() == CV_32FC1);
-
-    Mat corresps(depth1.size(), CV_16SC2, Scalar::all(-1));
-
-    Rect r(0, 0, depth1.cols, depth1.rows);
-    Mat Kt = Rt(Rect(3,0,1,3)).clone();
-    Kt = K * Kt;
-    //const double * Kt_ptr = Kt.ptr<const double>();
-    const float * Kt_ptr = Kt.ptr<const float>();
-
-    AutoBuffer<float> buf(3 * (depth1.cols + depth1.rows));
-    float *KRK_inv0_u1 = buf;
-    float *KRK_inv1_v1_plus_KRK_inv2 = KRK_inv0_u1 + depth1.cols;
-    float *KRK_inv3_u1 = KRK_inv1_v1_plus_KRK_inv2 + depth1.rows;
-    float *KRK_inv4_v1_plus_KRK_inv5 = KRK_inv3_u1 + depth1.cols;
-    float *KRK_inv6_u1 = KRK_inv4_v1_plus_KRK_inv5 + depth1.rows;
-    float *KRK_inv7_v1_plus_KRK_inv8 = KRK_inv6_u1 + depth1.cols;
-    {
-        Mat R = Rt(Rect(0,0,3,3)).clone();
-
-        Mat KRK_inv = K * R * K_inv;
-        //const double * KRK_inv_ptr = KRK_inv.ptr<const double>();
-        const float * KRK_inv_ptr = KRK_inv.ptr<const float>();
-        for(int u1 = 0; u1 < depth1.cols; u1++)
-        {
-            KRK_inv0_u1[u1] = (float)(KRK_inv_ptr[0] * u1);
-            KRK_inv3_u1[u1] = (float)(KRK_inv_ptr[3] * u1);
-            KRK_inv6_u1[u1] = (float)(KRK_inv_ptr[6] * u1);
-        }
-
-        for(int v1 = 0; v1 < depth1.rows; v1++)
-        {
-            KRK_inv1_v1_plus_KRK_inv2[v1] = (float)(KRK_inv_ptr[1] * v1 + KRK_inv_ptr[2]);
-            KRK_inv4_v1_plus_KRK_inv5[v1] = (float)(KRK_inv_ptr[4] * v1 + KRK_inv_ptr[5]);
-            KRK_inv7_v1_plus_KRK_inv8[v1] = (float)(KRK_inv_ptr[7] * v1 + KRK_inv_ptr[8]);
-        }
-    }
-
-    int correspCount = 0;
-    for(int v1 = 0; v1 < depth1.rows; v1++)
-    {
-        const float *depth1_row = depth1.ptr<float>(v1);
-        const uchar *mask1_row = selectMask1.ptr<uchar>(v1);
-        for(int u1 = 0; u1 < depth1.cols; u1++)
-        {
-            float d1 = depth1_row[u1];
-            if(mask1_row[u1])
-            {
-                CV_DbgAssert(!cvIsNaN(d1));
-                float transformed_d1 = static_cast<float>(d1 * (KRK_inv6_u1[u1] + KRK_inv7_v1_plus_KRK_inv8[v1]) +
-                                                          Kt_ptr[2]);
-                if(transformed_d1 > 0)
-                {
-                    float transformed_d1_inv = 1.f / transformed_d1;
-                    int u0 = cvRound(transformed_d1_inv * (d1 * (KRK_inv0_u1[u1] + KRK_inv1_v1_plus_KRK_inv2[v1]) +
-                                                           Kt_ptr[0]));
-                    int v0 = cvRound(transformed_d1_inv * (d1 * (KRK_inv3_u1[u1] + KRK_inv4_v1_plus_KRK_inv5[v1]) +
-                                                           Kt_ptr[1]));
-                         if(u1==55 && v1==56)
-                         {
-                            cout << u0 << endl;
-                            cout << v0 << endl;
-                            cout << u1 << endl;
-                            cout << v1 << endl;
-                         }
-                    if(r.contains(Point(u0,v0)))
-                    {
-                        float d0 = depth0.at<float>(v0,u0);
-                        if(validMask0.at<uchar>(v0, u0) && std::abs(transformed_d1 - d0) <= maxDepthDiff)
-                        {
-                            CV_DbgAssert(!cvIsNaN(d0));
-                            Vec2s& c = corresps.at<Vec2s>(v0,u0);
-                            if(c[0] != -1)
-                            {
-                                int exist_u1 = c[0], exist_v1 = c[1];
-
-                                float exist_d1 = (float)(depth1.at<float>(exist_v1,exist_u1) *
-                                    (KRK_inv6_u1[exist_u1] + KRK_inv7_v1_plus_KRK_inv8[exist_v1]) + Kt_ptr[2]);
-
-                                if(transformed_d1 > exist_d1)
-                                    continue;
-                            }
-                            else
-                                correspCount++;
-
-                            c = Vec2s((short)u1, (short)v1);
-                            //cout << u0 << endl;
-                            //cout << v0 << endl;
-                            //cout << u1 << endl;
-                            //cout << v1 << endl;
-                            //cout << c << endl;
-                            //exit(1);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    _corresps.create(correspCount, 1, CV_32SC4);
-    Vec4i * corresps_ptr = _corresps.ptr<Vec4i>();
-    for(int v0 = 0, i = 0; v0 < corresps.rows; v0++)
-    {
-        const Vec2s* corresps_row = corresps.ptr<Vec2s>(v0);
-        for(int u0 = 0; u0 < corresps.cols; u0++)
-        {
-            const Vec2s& c = corresps_row[u0];
-            if(c[0] != -1)
-                corresps_ptr[i++] = Vec4i(u0,v0,c[0],c[1]);
-        }
-    }
-}
-*/
 typedef
 void (*CalcRgbdEquationCoeffsPtr)(double*, double, double, const Point3f&, double, double);
 
@@ -1336,27 +1235,15 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
                         vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, CalcICPEquationCoeffsPtr func, int transformDim)
 {
     
-    //FixedPointScalar zero_fix((int64_t)0, fpconfig);
-    //vector<FixedPointScalar> A_vec(transformDim*transformDim, zero_fix);
-    //vector<FixedPointScalar> B_vec(transformDim, zero_fix);
-
-    //FixedPointScalar correspsCount((int64_t)(corresps.rows*(1LL<<shift)), fpconfig);
     FixedPointScalar correspsCount((FIXP_SCALAR_TYPE)corresps.rows, fpconfig);
 
     const Vec4i* corresps_ptr = corresps.ptr<Vec4i>();
 
     vector<FixedPointScalar> Rt_vec;
     Rt_vec = f_Mat2Vec(Rt, fpconfig); //float
-    //vector<FixedPointVector> cloud0_vec;
-    //cloud0_vec = f_PMat2Vec(cloud0, fpconfig); //float
-    //vector<FixedPointVector> cloud1_vec;
-    //cloud1_vec = f_PMat2Vec(cloud1, fpconfig); //float
-    //vector<FixedPointVector> nor_vec;
-    //nor_vec = f_PMat2Vec(normals1, fpconfig);  //float
 
     vector<FixedPointScalar> diffs_ptr;
     vector<FixedPointVector> tps0_ptr;
-    //FixedPointScalar sigma((int64_t)0, fpconfig);
     FixedPointScalar sigma((FIXP_SCALAR_TYPE)0, fpconfig);
     for(int correspIndex = 0; correspIndex < corresps.rows; correspIndex++)
     {
@@ -1371,9 +1258,6 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
         FixedPointScalar p0z ((FIXP_SCALAR_TYPE)p0.z, fpconfig);
 
 
-        //FixedPointScalar tp0x ((p0x * Rt_vec[0] + p0y * Rt_vec[1] + p0z * Rt_vec[2] + Rt_vec[3]).value, fpconfig);
-        //FixedPointScalar tp0y ((p0x * Rt_vec[4] + p0y * Rt_vec[5] + p0z * Rt_vec[6] + Rt_vec[7]).value, fpconfig);
-        //FixedPointScalar tp0z ((p0x * Rt_vec[8] + p0y * Rt_vec[9] + p0z * Rt_vec[10] + Rt_vec[11]).value, fpconfig);
         FixedPointScalar tp0x = p0x * Rt_vec[0] + p0y * Rt_vec[1] + p0z * Rt_vec[2] + Rt_vec[3];
         FixedPointScalar tp0y = p0x * Rt_vec[4] + p0y * Rt_vec[5] + p0z * Rt_vec[6] + Rt_vec[7];
         FixedPointScalar tp0z = p0x * Rt_vec[8] + p0y * Rt_vec[9] + p0z * Rt_vec[10] + Rt_vec[11];
@@ -1401,42 +1285,13 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
         sigma += diffs * diffs;
     }
 
-    //AtA = Mat(transformDim, transformDim, CV_32FC1, Scalar(0));
-    //AtB = Mat(transformDim, 1, CV_32FC1, Scalar(0));
-    //float* AtB_ptr = AtB.ptr<float>();
-    //cout << sigma.value_floating << endl;
-    //FixedPointScalar sigma_final( (int64_t)(sqrt((sigma/correspsCount).value) * (1LL<<shift_half)) ,  fpconfig);
-    //FixedPointScalar sigma_final((sigma/correspsCount).sqrt().value ,  fpconfig);
     FixedPointScalar sigma_final = (sigma/correspsCount).sqrt();
-    //cout << "test: " << sigma_final.value_floating << endl;
-    //cout << sigma_final.to_floating() << endl;
 
-    //std::vector<float> A_buf(transformDim);
-    //Mat tps0_mat;
-    //tps0_mat = PVec2Mat_f(tps0_ptr, corresps.rows, 1);
-    //Point3f* tps0_mat_ptr = tps0_mat.ptr<Point3f>();
-    //double* A_ptr = &A_buf[0];
-    //float* A_ptr = &A_buf[0];
     for(int correspIndex = 0; correspIndex < corresps.rows; correspIndex++)
     {
         const Vec4i& c = corresps_ptr[correspIndex];
         int u1 = c[2], v1 = c[3];
         
-        //int64_t w_tmp = sigma_final.value + std::abs(diffs_ptr[correspIndex].value);
-        //if(w_tmp == 0)
-        //{
-        //  w_tmp = 1LL<<shift;
-        //}
-        //else
-        //{
-        //  w_tmp = ((1LL<<(shift*2))/w_tmp);
-        //  //w_tmp = ((1LL<<shift)/w_tmp)<<shift;
-        //  //cout << w_tmp << endl;
-        //  //exit(1);
-        //}
-        //FixedPointScalar w (w_tmp, fpconfig);
-        
-
         FixedPointScalar w_tmp = sigma_final + diffs_ptr[correspIndex].abs();
         FixedPointScalar one_fix((FIXP_SCALAR_TYPE)1, fpconfig);
         FixedPointScalar w = one_fix;
@@ -1449,9 +1304,6 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
           w = one_fix / w_tmp;
         }
         
-        //cout << 'w' << w.value_floating << endl;
-        //func(A_ptr, tps0_mat_ptr[correspIndex], normals1.at<Vec3f>(v1, u1) * w.value_floating);
-
         const Point3f& n1 = normals1.at<Point3f>(v1,u1); // float
         FixedPointScalar n1x ((FIXP_SCALAR_TYPE)n1.x, fpconfig);
         FixedPointScalar n1y ((FIXP_SCALAR_TYPE)n1.y, fpconfig);
@@ -1464,12 +1316,6 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
         FixedPointScalar neg_one(-1.0f, fpconfig);
         FixedPointScalar zero_fix((FIXP_SCALAR_TYPE)0, fpconfig);
         vector<FixedPointScalar> C_vec(6, zero_fix);
-        //C_vec.push_back(neg_one * tp0.z * n1y + tp0.y * n1z);
-        //C_vec.push_back( tp0.z * n1x - tp0.x * n1z);
-        //C_vec.push_back(neg_one * tp0.y * n1x + tp0.x * n1y);
-        //C_vec.push_back(n1x);
-        //C_vec.push_back(n1y);
-        //C_vec.push_back(n1z);
         FixedPointScalar c0 = neg_one * tp0.z * n1y + tp0.y * n1z;
         FixedPointScalar c1 = tp0.z * n1x - tp0.x * n1z;
         FixedPointScalar c2 = neg_one * tp0.y * n1x + tp0.x * n1y;
@@ -1480,33 +1326,11 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
         C_vec[4] = n1y;
         C_vec[5] = n1z;
 
-        //Mat AtC = Vec2Mat_f(C_vec, transformDim, 1); //float
-        //cout << AtC << endl;
-        //cout << "tp0z" << tp0.z.value_floating <<  endl;
-        //cout << "tp0z" << tp0.z.value <<  endl;
-        //cout << "tp0y" << tp0.y.value_floating <<  endl;
-        //cout << "tp0y" << tp0.y.value <<  endl;
-        //cout << "n1y" << n1y.value_floating <<  endl;
-        //cout << "n1y" << n1y.value <<  endl;
-        //cout << "n1z" << n1z.value_floating <<  endl;
-        //cout << "n1z" << n1z.value <<  endl;
-        //cout << "-1" << neg_one.value_floating <<  endl;
-        //cout << "-1" << neg_one.value <<  endl;
-        //FixedPointScalar lll = neg_one * tp0.z * n1y + tp0.y * n1z;
-        //cout << "lll " << lll.value_floating <<  endl;
-        //cout << "c_vec[0] " << C_vec[0].value_floating <<  endl;
-        //cout << "c_vec[0] " << C_vec[0].value <<  endl;
-        //exit(1);
-
         for(int y = 0; y < transformDim; y++)
         {
-            //float* AtA_ptr = AtA.ptr<float>(y);
             for(int x = y; x < transformDim; x++)
             {
                 FixedPointScalar  test = C_vec[y] * C_vec[x];
-                //AtA_ptr[x] += (C_vec[y] * C_vec[x]).value_floating;
-                //A_vec[y*transformDim + x] = A_vec[y*transformDim + x] + (C_vec[y] * C_vec[x]);
-                //AtA_ptr[x] += test.value_floating;
                 A_vec[y*transformDim + x] = A_vec[y*transformDim + x] + test;
             }
             //AtB_ptr[y] += C_vec[y].value_floating * w.value_floating * diffs_ptr[correspIndex].value_floating;
@@ -1522,124 +1346,15 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
             //AtA.at<float>(x,y) = AtA.at<float>(y,x);
             A_vec[x*transformDim + y] = A_vec[y*transformDim + x];
         }
-    //Mat AtA = Vec2Mat_f(A_vec, transformDim, transformDim); //float
-    //Mat AtB = Vec2Mat_f(B_vec, transformDim, 1); //float
-    //cout << AtA << endl;
-    //cout << AtB << endl;
-    //exit(1);
 }
-
-/*
-static
-void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
-                        const Mat& cloud1, const Mat& normals1,
-                        const Mat& corresps,
-                        Mat& AtA, Mat& AtB, CalcICPEquationCoeffsPtr func, int transformDim)
-{
-    //AtA = Mat(transformDim, transformDim, CV_64FC1, Scalar(0));
-    //AtB = Mat(transformDim, 1, CV_64FC1, Scalar(0));
-    //double* AtB_ptr = AtB.ptr<double>();
-    AtA = Mat(transformDim, transformDim, CV_32FC1, Scalar(0));
-    AtB = Mat(transformDim, 1, CV_32FC1, Scalar(0));
-    float* AtB_ptr = AtB.ptr<float>();
-
-    const int correspsCount = corresps.rows;
-
-    //CV_Assert(Rt.type() == CV_64FC1);
-    //const double * Rt_ptr = Rt.ptr<const double>();
-    CV_Assert(Rt.type() == CV_32FC1);
-    const float * Rt_ptr = Rt.ptr<const float>();
-
-    AutoBuffer<float> diffs(correspsCount);
-    float * diffs_ptr = diffs;
-
-    AutoBuffer<Point3f> transformedPoints0(correspsCount);
-    Point3f * tps0_ptr = transformedPoints0;
-
-    const Vec4i* corresps_ptr = corresps.ptr<Vec4i>();
-
-    //double sigma = 0;
-    float sigma = 0;
-    for(int correspIndex = 0; correspIndex < corresps.rows; correspIndex++)
-    {
-        const Vec4i& c = corresps_ptr[correspIndex];
-        int u0 = c[0], v0 = c[1];
-        int u1 = c[2], v1 = c[3];
-
-        const Point3f& p0 = cloud0.at<Point3f>(v0,u0);
-        Point3f tp0;
-        tp0.x = (float)(p0.x * Rt_ptr[0] + p0.y * Rt_ptr[1] + p0.z * Rt_ptr[2] + Rt_ptr[3]);
-        tp0.y = (float)(p0.x * Rt_ptr[4] + p0.y * Rt_ptr[5] + p0.z * Rt_ptr[6] + Rt_ptr[7]);
-        tp0.z = (float)(p0.x * Rt_ptr[8] + p0.y * Rt_ptr[9] + p0.z * Rt_ptr[10] + Rt_ptr[11]);
-
-        Vec3f n1 = normals1.at<Vec3f>(v1, u1);
-        Point3f v = cloud1.at<Point3f>(v1,u1) - tp0;
-
-        tps0_ptr[correspIndex] = tp0;
-        diffs_ptr[correspIndex] = n1[0] * v.x + n1[1] * v.y + n1[2] * v.z;
-        //std::cout << "====================test=======================" << diffs_ptr[0] <<  std::endl;
-        //exit(1);
-        sigma += diffs_ptr[correspIndex] * diffs_ptr[correspIndex];
-    }
-
-    cout << sigma << endl;
-    sigma = std::sqrt(sigma/correspsCount);
-    cout << sigma << endl;
-
-    //std::vector<double> A_buf(transformDim);
-    std::vector<float> A_buf(transformDim);
-    //double* A_ptr = &A_buf[0];
-    float* A_ptr = &A_buf[0];
-    for(int correspIndex = 0; correspIndex < corresps.rows; correspIndex++)
-    {
-        const Vec4i& c = corresps_ptr[correspIndex];
-        int u1 = c[2], v1 = c[3];
-
-        //double w = sigma + std::abs(diffs_ptr[correspIndex]);
-        float w = sigma + std::abs(diffs_ptr[correspIndex]);
-        w = w > DBL_EPSILON ? 1./w : 1.;
-        cout << "w"  << w  << endl;
-
-        func(A_ptr, tps0_ptr[correspIndex], normals1.at<Vec3f>(v1, u1) * w);
-
-        for(int y = 0; y < transformDim; y++)
-        {
-            //double* AtA_ptr = AtA.ptr<double>(y);
-            float* AtA_ptr = AtA.ptr<float>(y);
-            for(int x = y; x < transformDim; x++)
-                AtA_ptr[x] += A_ptr[y] * A_ptr[x];
-
-            AtB_ptr[y] += A_ptr[y] * w * diffs_ptr[correspIndex];
-        }
-    }
-
-    for(int y = 0; y < transformDim; y++)
-        for(int x = y+1; x < transformDim; x++)
-            //AtA.at<double>(x,y) = AtA.at<double>(y,x);
-            AtA.at<float>(x,y) = AtA.at<float>(y,x);
-    cout << AtA << endl;
-    cout << AtB << endl;
-    exit(1);
-    //cout << "==================test====================" << AtA <<  endl;
-    //cout << "==================test====================" << AtB <<  endl;
-    //exit(1);
-}
-*/
 
 static
 void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, double detThreshold, Mat& x)
 {
-    //vector<FixedPointScalar> A_vec;
-    //A_vec = i_Mat2Vec(AtA, fpconfig);
-    //vector<FixedPointScalar> B_vec;
-    //B_vec = i_Mat2Vec(AtB, fpconfig);
     FixedPointScalar zero_fix((FIXP_SCALAR_TYPE)0, fpconfig);
     vector<FixedPointScalar> A_vec2(6*6, zero_fix);
     vector<FixedPointScalar> B_vec2(6, zero_fix);
-    //Mat AtA = Vec2Mat_f(A_vec, 6,6);
-    //cout << AtA << endl;
 
-    //cout << "===========DIVUU===================== " << A_vec[0].value << endl;
     int rows = 6;
     int cols = 6;
     A_vec2[0] = A_vec[0];
@@ -1660,13 +1375,6 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
             if(m==0)
             {
                 A_vec2[k*cols + k] = A_vec[k*cols + k] - (A_vec2[m*cols + k] * A_vec2[k*cols + m]);
-                //cout << "A " << A_vec2[m*cols + k].value_floating << endl;
-                //cout << "A " << A_vec2[m*cols + k].value << endl;
-                //A_vec2[m*cols + k].print_big_value();
-                //cout << "A " << A_vec2[k*cols + m].value_floating << endl;
-                //cout << "A " << A_vec2[k*cols + m].value << endl;
-                //A_vec2[k*cols + m].print_big_value();
-                //cout << "tt " << (k*cols + m) << endl;
  
             }
             else
@@ -1689,11 +1397,6 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
         }
 
     }
-    //Mat AtA = Vec2Mat_f(A_vec, 6,6);
-    //cout << AtA << endl;
-    //Mat AtA2 = Vec2Mat_f(A_vec2, 6,6);
-    //cout << AtA2 << endl;
-    //exit(1);
 
     B_vec2[0] = B_vec[0];
     for(int i = 0; i < rows; i++)
@@ -1726,49 +1429,8 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
         cout << "B " << B_vec2[0].value << endl;
         cout << "B " << B_vec2[0].value_floating << endl;
     }
-    //cout << x << endl;
-    //cout << "B " << B_vec2[0].value_floating << endl;
-    //cout << "B " << B_vec2[1].value_floating << endl;
-    //cout << "B " << B_vec2[2].value_floating << endl;
-    //cout << "B " << B_vec2[3].value_floating << endl;
-    //cout << "B " << B_vec2[4].value_floating << endl;
-    //cout << "B " << B_vec2[5].value_floating << endl;
-    //cout << "B " << B_vec2[0].value << endl;
-    //cout << "B " << B_vec2[1].value << endl;
-    //cout << "B " << B_vec2[2].value << endl;
-    //cout << "B " << B_vec2[3].value << endl;
-    //cout << "B " << B_vec2[4].value << endl;
-    //cout << "B " << B_vec2[5].value << endl;
-    //B_vec2[0].print_big_value();
-    //B_vec2[1].print_big_value();
-    //B_vec2[2].print_big_value();
-    //B_vec2[3].print_big_value();
-    //B_vec2[4].print_big_value();
-    //B_vec2[5].print_big_value();
-    //exit(1);
-
 }
 
-/*
-static
-//bool solveSystem(const Mat& AtA, const Mat& AtB, double detThreshold, Mat& x)
-void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, double detThreshold, Mat& x)
-{
-    Mat AtA = Vec2Mat_f(A_vec, 6, 6);
-    Mat AtB = Vec2Mat_f(B_vec, 6, 1);
-    //double det = determinant(AtA);
-    //cout << AtA << endl;
-    //cout << AtB << endl;
-    //exit(1);
-    //if(fabs (det) < detThreshold || cvIsNaN(det) || cvIsInf(det))
-    //    return false;
-
-    solve(AtA, AtB, x, DECOMP_CHOLESKY);
-    //cout << x << endl;
-    //exit(1);
-    //return true;
-}
-*/
 static
 bool testDeltaTransformation(const Mat& deltaRt, double maxTranslation, double maxRotation)
 {
@@ -1906,7 +1568,7 @@ bool Odometry::compute(Ptr<OdometryFrame>& srcFrame, Ptr<OdometryFrame>& dstFram
                             srcLevelDepth, srcFrame->pyramidMask[level], dstLevelDepth, dstFrame->pyramidNormalsMask[level],
                             maxDepthDiff, corresps_icp);
             //cout << corresps_icp << endl;
-            cout << "corresps_icp " << corresps_icp.rows << endl;
+            //cout << "corresps_icp " << corresps_icp.rows << endl;
             //if(iter == 1)
             //  exit(1);
             //Mat AtA(transformDim, transformDim, CV_64FC1, Scalar(0)), AtB(transformDim, 1, CV_64FC1, Scalar(0));
@@ -1944,12 +1606,12 @@ bool Odometry::compute(Ptr<OdometryFrame>& srcFrame, Ptr<OdometryFrame>& dstFram
             //    break;
             computeProjectiveMatrix(ksi, currRt);
             resultRt = currRt * resultRt;
-            cout << AtA << endl;
-            cout << AtB << endl;
-            cout << "currRt " << currRt << endl;
-            cout << "resultRt " << resultRt << endl;
-            if(iter == 1)
-              exit(1);
+            //cout << AtA << endl;
+            //cout << AtB << endl;
+            //cout << "currRt " << currRt << endl;
+            //cout << "resultRt " << resultRt << endl;
+            //if(iter == 1)
+            //  exit(1);
             if(cvIsNaN(ksi.at<float>(0,0)))
             {
                 cout << "ksi " << ksi << endl;

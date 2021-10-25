@@ -64,6 +64,8 @@ using namespace cv;
     std::vector<Mat> pyramidNormalsMask;
 
     std::vector<std::vector<FixedPointVector>>  pyramidNormals_test;
+    std::vector<FixedPointMatrix>  pyramidDepth_test;
+    std::vector<std::vector<FixedPointVector>> pyramidCloud_test;
   };
 
   class Odometry

@@ -122,6 +122,8 @@ void OdometryFrame::releasePyramids()
     pyramidNormalsMask.clear();
 
     pyramidNormals_test.clear();
+    pyramidDepth_test.clear();
+    pyramidCloud_test.clear();
 }
 
 
@@ -828,7 +830,8 @@ void preparePyramidTexturedMask(const std::vector<Mat>& pyramid_dI_dx, const std
 }
 
 static
-void preparePyramidNormalsMask(const std::vector<Mat>& pyramidNormals, const std::vector<Mat>& pyramidMask, double maxPointsPart,
+//void preparePyramidNormalsMask(const std::vector<Mat>& pyramidNormals, const std::vector<Mat>& pyramidMask, double maxPointsPart,
+void preparePyramidNormalsMask(const std::vector<Mat>& pyramidMask, double maxPointsPart,
                                std::vector<Mat>& pyramidNormalsMask)
 {
     if(!pyramidNormalsMask.empty())
@@ -926,25 +929,25 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
 
     //preparePyramidDepth(frame->depth, frame->pyramidDepth, iterCounts.total());
 
-    vector<FixedPointMatrix> pyramidDepth_test;
-    buildpy(frame->depth, pyramidDepth_test, iterCounts.total());
-    if(frame->pyramidDepth.empty())
-    {
-        for( int i = 0; i < iterCounts.total(); i++ )
-        {
-            frame->pyramidDepth.push_back(Vec2Mat_f(pyramidDepth_test[i].to_vector(), pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
-        }  
-    }
+    //vector<FixedPointMatrix> pyramidDepth_test;
+    buildpy(frame->depth, frame->pyramidDepth_test, iterCounts.total());
+    //if(frame->pyramidDepth.empty())
+    //{
+    //    for( int i = 0; i < iterCounts.total(); i++ )
+    //    {
+    //        frame->pyramidDepth.push_back(Vec2Mat_f(frame->pyramidDepth_test[i].to_vector(), frame->pyramidDepth_test[i].value_floating.rows(), frame->pyramidDepth_test[i].value_floating.cols()));
+    //    }  
+    //}
     //preparePyramidCloud(frame->pyramidDepth, cameraMatrix, frame->pyramidCloud);
-    vector<vector<FixedPointVector>> pyramidCloud_test;
-    preparePyramidCloud(pyramidDepth_test, cameraMatrix, pyramidCloud_test);
-    if(frame->pyramidCloud.empty())
-    {
-        for( int i = 0; i < iterCounts.total(); i++ )
-        {
-            frame->pyramidCloud.push_back(PVec2Mat_f(pyramidCloud_test[i], pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
-        }  
-    }
+    //vector<vector<FixedPointVector>> pyramidCloud_test;
+    preparePyramidCloud(frame->pyramidDepth_test, cameraMatrix, frame->pyramidCloud_test);
+    //if(frame->pyramidCloud.empty())
+    //{
+    //    for( int i = 0; i < iterCounts.total(); i++ )
+    //    {
+    //        frame->pyramidCloud.push_back(PVec2Mat_f(pyramidCloud_test[i], frame->pyramidDepth_test[i].value_floating.rows(), frame->pyramidDepth_test[i].value_floating.cols()));
+    //    }  
+    //}
 
     if(cacheType & OdometryFrame::CACHE_DST)
     {
@@ -958,7 +961,7 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
             else
             {
                 //normalsComputer(frame->pyramidCloud[0], frame->depth.rows, frame->depth.cols, frame->normals);
-                normals_test = normalsComputer(pyramidCloud_test[0], frame->depth.rows, frame->depth.cols);
+                normals_test = normalsComputer(frame->pyramidCloud_test[0], frame->depth.rows, frame->depth.cols);
                 //frame->normals = PVec2Mat_f(normals_test, frame->depth.rows, frame->depth.cols);
             }
         }
@@ -986,19 +989,19 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
         //preparePyramidNormals(frame->normals, frame->pyramidDepth, frame->pyramidNormals);
         //vector<vector<FixedPointVector>> pyramidNormals_test; 
         //preparePyramidNormals(normals_test, pyramidDepth_test, pyramidNormals_test);
-        preparePyramidNormals(normals_test, pyramidDepth_test, frame->pyramidNormals_test);
-        if(frame->pyramidNormals.empty())
-        {
-            for( int i = 0; i < iterCounts.total(); i++ )
-            {
-                //frame->pyramidNormals.push_back(PVec2Mat_f(pyramidNormals_test[i], pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
-                frame->pyramidNormals.push_back(PVec2Mat_f(frame->pyramidNormals_test[i], pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
-            }  
-        }
+        preparePyramidNormals(normals_test, frame->pyramidDepth_test, frame->pyramidNormals_test);
+        //if(frame->pyramidNormals.empty())
+        //{
+        //    for( int i = 0; i < iterCounts.total(); i++ )
+        //    {
+        //        //frame->pyramidNormals.push_back(PVec2Mat_f(pyramidNormals_test[i], pyramidDepth_test[i].value_floating.rows(), pyramidDepth_test[i].value_floating.cols()));
+        //        frame->pyramidNormals.push_back(PVec2Mat_f(frame->pyramidNormals_test[i], frame->pyramidDepth_test[i].value_floating.rows(), frame->pyramidDepth_test[i].value_floating.cols()));
+        //    }  
+        //}
 
         //preparePyramidMask(frame->mask, frame->pyramidDepth, (float)minDepth, (float)maxDepth,
         //                   frame->pyramidNormals, frame->pyramidMask);
-        preparePyramidMask(frame->mask, pyramidDepth_test, (float)minDepth, (float)maxDepth,
+        preparePyramidMask(frame->mask, frame->pyramidDepth_test, (float)minDepth, (float)maxDepth,
                            frame->pyramidNormals_test, frame->pyramidMask);
 
         //cout << "liyang test" << frame->mask << endl;
@@ -1009,12 +1012,13 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
                                    minGradientMagnitudes, frame->pyramidMask,
                                    maxPointsPart, frame->pyramidTexturedMask);
 
-        preparePyramidNormalsMask(frame->pyramidNormals, frame->pyramidMask, maxPointsPart, frame->pyramidNormalsMask);
+        //preparePyramidNormalsMask(frame->pyramidNormals, frame->pyramidMask, maxPointsPart, frame->pyramidNormalsMask);
+        preparePyramidNormalsMask(frame->pyramidMask, maxPointsPart, frame->pyramidNormalsMask);
     }
     else
         //preparePyramidMask(frame->mask, frame->pyramidDepth, (float)minDepth, (float)maxDepth,
         //                   frame->pyramidNormals, frame->pyramidMask);
-        preparePyramidMask(frame->mask, pyramidDepth_test, (float)minDepth, (float)maxDepth,
+        preparePyramidMask(frame->mask, frame->pyramidDepth_test, (float)minDepth, (float)maxDepth,
                            frame->pyramidNormals_test, frame->pyramidMask);
 
     return frame->image.size();
@@ -1022,10 +1026,10 @@ Size Odometry::prepareFrameCache(Ptr<OdometryFrame>& frame, int cacheType) const
 
 static
 void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
-                     const Mat& depth0, const Mat& validMask0,
-                     const Mat& depth1, const Mat& selectMask1, float maxDepthDiff,
-                     //const vector<FixedPointScalar>& depth0, const Mat& validMask0,
-                     //const vector<FixedPointScalar>& depth1, const Mat& selectMask1, float maxDepthDiff,
+                     //const Mat& depth0, const Mat& validMask0,
+                     //const Mat& depth1, const Mat& selectMask1, float maxDepthDiff,
+                     const FixedPointMatrix& depth0, const Mat& validMask0,
+                     const FixedPointMatrix& depth1, const Mat& selectMask1, float maxDepthDiff,
                      Mat& _corresps)
 {
 
@@ -1042,8 +1046,10 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   Rt_vec = f_Mat2Vec(Rt, fpconfig);
   vector<FixedPointScalar> d0_vec;
   vector<FixedPointScalar> d1_vec;
-  d0_vec = f_Mat2Vec(depth0, fpconfig);//float
-  d1_vec = f_Mat2Vec(depth1, fpconfig);//float
+  //d0_vec = f_Mat2Vec(depth0, fpconfig);//float
+  //d1_vec = f_Mat2Vec(depth1, fpconfig);//float
+  d0_vec = depth0.to_vector();
+  d1_vec = depth1.to_vector();
 
   FixedPointScalar RK_inv_00 = Rt_vec[0]*fx_inv;
   FixedPointScalar RK_inv_01 = Rt_vec[1]*fy_inv;
@@ -1067,10 +1073,13 @@ void computeCorresps(const Mat& K, const Mat& K_inv, const Mat& Rt,
   FixedPointScalar Kt_0 = fx*Rt_vec[3] + cx*Rt_vec[11];
   FixedPointScalar Kt_1 = fy*Rt_vec[7] + cy*Rt_vec[11];
   FixedPointScalar Kt_2 = Rt_vec[11];
-  int rows = depth1.rows;
-  int cols = depth1.cols;
+  //int rows = depth1.rows;
+  //int cols = depth1.cols;
+  int rows = depth1.value_floating.rows();
+  int cols = depth1.value_floating.cols();
   int correspCount = 0;
-  Mat corresps(depth0.size(), CV_16SC2, Scalar::all(-1));
+  //Mat corresps(depth0.size(), CV_16SC2, Scalar::all(-1));
+  Mat corresps(depth0.value_floating.rows(), depth0.value_floating.cols(), CV_16SC2, Scalar::all(-1));
   Rect r(0, 0, cols, rows);
   for(int v1 = 0; v1 < rows; v1++)
   {
@@ -1228,11 +1237,13 @@ void calcRgbdLsmMatrices(const Mat& image0, const Mat& cloud0, const Mat& Rt,
 
 
 static
-void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
-                        const Mat& cloud1, const Mat& normals1,
+//void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
+//                        const Mat& cloud1, const Mat& normals1,
+void calcICPLsmMatrices(const vector<FixedPointVector>& cloud0, const Mat& Rt,
+                        const vector<FixedPointVector>& cloud1, const vector<FixedPointVector>& normals1,
                         const Mat& corresps,
                         //Mat& AtA, Mat& AtB, CalcICPEquationCoeffsPtr func, int transformDim)
-                        vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, CalcICPEquationCoeffsPtr func, int transformDim)
+                        vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, CalcICPEquationCoeffsPtr func, int transformDim, int cols)
 {
     
     FixedPointScalar correspsCount((FIXP_SCALAR_TYPE)corresps.rows, fpconfig);
@@ -1251,28 +1262,37 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
         int u0 = c[0], v0 = c[1];
         int u1 = c[2], v1 = c[3];
 
-        //FixedPointVector p0 = cloud0_vec[v0*cloud0.cols + u0];
-        const Point3f& p0 = cloud0.at<Point3f>(v0,u0); // float
-        FixedPointScalar p0x ((FIXP_SCALAR_TYPE)p0.x, fpconfig);
-        FixedPointScalar p0y ((FIXP_SCALAR_TYPE)p0.y, fpconfig);
-        FixedPointScalar p0z ((FIXP_SCALAR_TYPE)p0.z, fpconfig);
+        FixedPointVector p0 = cloud0[v0*cols + u0];
+        //const Point3f& p0 = cloud0.at<Point3f>(v0,u0); // float
+        //FixedPointScalar p0x ((FIXP_SCALAR_TYPE)p0.x, fpconfig);
+        //FixedPointScalar p0y ((FIXP_SCALAR_TYPE)p0.y, fpconfig);
+        //FixedPointScalar p0z ((FIXP_SCALAR_TYPE)p0.z, fpconfig);
+        FixedPointScalar p0x = p0.x;
+        FixedPointScalar p0y = p0.y;
+        FixedPointScalar p0z = p0.z;
 
 
         FixedPointScalar tp0x = p0x * Rt_vec[0] + p0y * Rt_vec[1] + p0z * Rt_vec[2] + Rt_vec[3];
         FixedPointScalar tp0y = p0x * Rt_vec[4] + p0y * Rt_vec[5] + p0z * Rt_vec[6] + Rt_vec[7];
         FixedPointScalar tp0z = p0x * Rt_vec[8] + p0y * Rt_vec[9] + p0z * Rt_vec[10] + Rt_vec[11];
 
-        //FixedPointVector n1 = nor_vec[v1*cloud1.rows + u1];
-        const Point3f& n1 = normals1.at<Point3f>(v1,u1); // float
-        FixedPointScalar n1x ((FIXP_SCALAR_TYPE)n1.x, fpconfig);
-        FixedPointScalar n1y ((FIXP_SCALAR_TYPE)n1.y, fpconfig);
-        FixedPointScalar n1z ((FIXP_SCALAR_TYPE)n1.z, fpconfig);
+        FixedPointVector n1 = normals1[v1*cols + u1];
+        //const Point3f& n1 = normals1.at<Point3f>(v1,u1); // float
+        //FixedPointScalar n1x ((FIXP_SCALAR_TYPE)n1.x, fpconfig);
+        //FixedPointScalar n1y ((FIXP_SCALAR_TYPE)n1.y, fpconfig);
+        //FixedPointScalar n1z ((FIXP_SCALAR_TYPE)n1.z, fpconfig);
+        FixedPointScalar n1x = n1.x;
+        FixedPointScalar n1y = n1.y;
+        FixedPointScalar n1z = n1.z;
 
-        //FixedPointVector p1 = cloud1_vec[v1*cloud1.rows + u1];
-        const Point3f& p1 = cloud1.at<Point3f>(v1,u1); // float
-        FixedPointScalar p1x ((FIXP_SCALAR_TYPE)p1.x, fpconfig);
-        FixedPointScalar p1y ((FIXP_SCALAR_TYPE)p1.y, fpconfig);
-        FixedPointScalar p1z ((FIXP_SCALAR_TYPE)p1.z, fpconfig);
+        FixedPointVector p1 = cloud1[v1*cols + u1];
+        //const Point3f& p1 = cloud1.at<Point3f>(v1,u1); // float
+        //FixedPointScalar p1x ((FIXP_SCALAR_TYPE)p1.x, fpconfig);
+        //FixedPointScalar p1y ((FIXP_SCALAR_TYPE)p1.y, fpconfig);
+        //FixedPointScalar p1z ((FIXP_SCALAR_TYPE)p1.z, fpconfig);
+        FixedPointScalar p1x = p1.x;
+        FixedPointScalar p1y = p1.y;
+        FixedPointScalar p1z = p1.z;
 
         FixedPointVector v (p1x - tp0x, p1y - tp0y, p1z - tp0z);
 
@@ -1304,10 +1324,14 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
           w = one_fix / w_tmp;
         }
         
-        const Point3f& n1 = normals1.at<Point3f>(v1,u1); // float
-        FixedPointScalar n1x ((FIXP_SCALAR_TYPE)n1.x, fpconfig);
-        FixedPointScalar n1y ((FIXP_SCALAR_TYPE)n1.y, fpconfig);
-        FixedPointScalar n1z ((FIXP_SCALAR_TYPE)n1.z, fpconfig);
+        FixedPointVector n1 = normals1[v1*cols + u1];
+        //const Point3f& n1 = normals1.at<Point3f>(v1,u1); // float
+        //FixedPointScalar n1x ((FIXP_SCALAR_TYPE)n1.x, fpconfig);
+        //FixedPointScalar n1y ((FIXP_SCALAR_TYPE)n1.y, fpconfig);
+        //FixedPointScalar n1z ((FIXP_SCALAR_TYPE)n1.z, fpconfig);
+        FixedPointScalar n1x = n1.x;
+        FixedPointScalar n1y = n1.y;
+        FixedPointScalar n1z = n1.z;
         n1x = n1x * w;
         n1y = n1y * w;
         n1z = n1z * w;
@@ -1543,10 +1567,10 @@ bool Odometry::compute(Ptr<OdometryFrame>& srcFrame, Ptr<OdometryFrame>& dstFram
     {
         const Mat& levelCameraMatrix = pyramidCameraMatrix[level];
         const Mat& levelCameraMatrix_inv = levelCameraMatrix.inv(DECOMP_SVD);
-        const Mat& srcLevelDepth = srcFrame->pyramidDepth[level];
-        const Mat& dstLevelDepth = dstFrame->pyramidDepth[level];
-        //const Vector<FixedPointScalar>& srcLevelDepth = srcFrame->pyramidDepth[level].to_vector();
-        //const Vector<FixedPointScalar>& dstLevelDepth = dstFrame->pyramidDepth[level].to_vector();
+        //const Mat& srcLevelDepth = srcFrame->pyramidDepth[level];
+        //const Mat& dstLevelDepth = dstFrame->pyramidDepth[level];
+        const FixedPointMatrix& srcLevelDepth = srcFrame->pyramidDepth_test[level];
+        const FixedPointMatrix& dstLevelDepth = dstFrame->pyramidDepth_test[level];
 
         const double fx = levelCameraMatrix.at<double>(0,0);
         const double fy = levelCameraMatrix.at<double>(1,1);
@@ -1588,9 +1612,9 @@ bool Odometry::compute(Ptr<OdometryFrame>& srcFrame, Ptr<OdometryFrame>& dstFram
             //}
             if(corresps_icp.rows >= minCorrespsCount)
             {
-                calcICPLsmMatrices(srcFrame->pyramidCloud[level], resultRt,
-                                   dstFrame->pyramidCloud[level], dstFrame->pyramidNormals[level],
-                                   corresps_icp, A_vec, B_vec, icpEquationFuncPtr, transformDim);
+                calcICPLsmMatrices(srcFrame->pyramidCloud_test[level], resultRt,
+                                   dstFrame->pyramidCloud_test[level], dstFrame->pyramidNormals_test[level],
+                                   corresps_icp, A_vec, B_vec, icpEquationFuncPtr, transformDim, srcFrame->pyramidDepth_test[level].value_floating.cols());
                 //                   corresps_icp, AtA_icp, AtB_icp, icpEquationFuncPtr, transformDim);
                 //AtA += AtA_icp;
                 //AtB += AtB_icp;

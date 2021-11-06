@@ -69,7 +69,7 @@ public:
 		value_floating(value_floating),
 		value(value),
 		config(config) {
-                //mpz_init(big_value);
+                mpz_init(big_value);
         };
 
 	// Copy constructor
@@ -77,20 +77,20 @@ public:
 		value_floating = object.value_floating;
 		value = object.value;
 		config = object.config;
-                //mpz_init(big_value);
-		//mpz_set(big_value, object.big_value);
+                mpz_init(big_value);
+	        mpz_set(big_value, object.big_value);
 	};
 
 	// destructor
 	~FixedPointType() {
-            //mpz_clear(big_value);
+               mpz_clear(big_value);
         };
 
 	bool enable_check_bit_width = true;
 	Floating value_floating;
 	FixedPoint value;
 	FixedPointConfig config;
-        //mpz_t big_value;
+        mpz_t big_value;
 };
 
 /**
@@ -104,9 +104,9 @@ public:
 		FIXP_SCALAR_TYPE value_floating = 0,
 		FixedPointConfig config = FixedPointConfig(0, 0, 0));
 
-        FixedPointScalar(
-        	FIXP_INT_SCALAR_TYPE value = 0,
-        	FixedPointConfig config = FixedPointConfig(0, 0, 0));
+        //FixedPointScalar(
+        //	FIXP_INT_SCALAR_TYPE value = 0,
+        //	FixedPointConfig config = FixedPointConfig(0, 0, 0));
 	// Copy constructor
 	FixedPointScalar(const FixedPointScalar &object);
 

@@ -64,10 +64,10 @@ public:
 
 	FixedPointType(
 		Floating value_floating,
-		FixedPoint value,
+		//FixedPoint value,
 		FixedPointConfig config = FixedPointConfig(0, 0, 0)) :
 		value_floating(value_floating),
-		value(value),
+		//value(value),
 		config(config) {
                 mpz_init(big_value);
         };
@@ -75,7 +75,7 @@ public:
 	// Copy constructor
 	FixedPointType(const FixedPointType &object) {
 		value_floating = object.value_floating;
-		value = object.value;
+		//value = object.value;
 		config = object.config;
                 mpz_init(big_value);
 	        mpz_set(big_value, object.big_value);
@@ -88,7 +88,7 @@ public:
 
 	bool enable_check_bit_width = true;
 	Floating value_floating;
-	FixedPoint value;
+	//FixedPoint value;
 	FixedPointConfig config;
         mpz_t big_value;
 };
@@ -115,7 +115,7 @@ public:
 
 	void check_bit_width(int op);
 
-	void set_value(FIXP_INT_SCALAR_TYPE value, FixedPointConfig config);
+	//void set_value(FIXP_INT_SCALAR_TYPE value, FixedPointConfig config);
 
 	void set_bit_width(int bit_width);
 
@@ -166,16 +166,17 @@ public:
 };
 
 std::vector<FixedPointScalar> f_Mat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
-std::vector<FixedPointScalar> i_Mat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
+//std::vector<FixedPointScalar> i_Mat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
 cv::Mat Vec2Mat_f(const std::vector<FixedPointScalar>& in_vec, int rows, int cols);
-cv::Mat Vec2Mat_i(const std::vector<FixedPointScalar>& in_vec, int rows, int cols);
-cv::Mat PVec2Mat_i(const std::vector<FixedPointVector>& in_vec, int rows, int cols);
+//cv::Mat Vec2Mat_i(const std::vector<FixedPointScalar>& in_vec, int rows, int cols);
+//cv::Mat PVec2Mat_i(const std::vector<FixedPointVector>& in_vec, int rows, int cols);
 cv::Mat PVec2Mat_f(const std::vector<FixedPointVector>& in_vec, int rows, int cols);
-std::vector<FixedPointVector> i_PMat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
+//std::vector<FixedPointVector> i_PMat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
 std::vector<FixedPointVector> f_PMat2Vec(const cv::Mat& in_mat, FixedPointConfig config);
-cv::Mat Vec2Mat_d(const std::vector<FixedPointScalar>& in_vec, int rows, int cols);
+//cv::Mat Vec2Mat_d(const std::vector<FixedPointScalar>& in_vec, int rows, int cols);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
 class FixedPointMatrix : public FixedPointType<FIXP_MATRIX_TYPE, FIXP_INT_MATRIX_TYPE> {
 public:
 	FixedPointMatrix(
@@ -198,6 +199,7 @@ public:
 	FIXP_MATRIX_TYPE to_floating();
 	std::vector<FixedPointScalar> to_vector() const;
 };
+*/
 /*
 typedef Eigen::Matrix<FixedPointVector(FixedPointScalar, FixedPointScalar, FixedPointScalar) , Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> FIXP_POINT_MATRIX_TYPE;
 class FixedPointMatrixP {

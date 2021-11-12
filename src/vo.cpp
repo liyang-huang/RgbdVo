@@ -1529,7 +1529,8 @@ void calcRgbdLsmMatrices(const Mat& image0, const vector<FixedPointVector>& clou
          FixedPointScalar w_tmp = sigma_final + diffs_ptr[correspIndex].abs();
          FixedPointScalar one_fix((FIXP_SCALAR_TYPE)1, fpconfig);
          FixedPointScalar w = one_fix;
-         if(w_tmp.value == 0)
+         //if(w_tmp.value == 0)
+         if(mpz_get_si(w_tmp.big_value) == 0)
          {
            w = one_fix;
          }
@@ -1943,6 +1944,7 @@ void calcICPLsmMatrices(const Mat& cloud0, const Mat& Rt,
     //exit(1);
 }
 */
+/*
 static
 bool solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, double detThreshold, Mat& x)
 {
@@ -2148,10 +2150,10 @@ bool solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
     return true;
 
 }
+*/
 
-/*
 static
-void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, double detThreshold, Mat& x)
+bool solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_vec, double detThreshold, Mat& x)
 {
     FixedPointScalar zero_fix((FIXP_SCALAR_TYPE)0, fpconfig2);
     vector<FixedPointScalar> A_vec2(6*6, zero_fix);
@@ -2159,6 +2161,11 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
 
     int rows = 6;
     int cols = 6;
+    if(mpz_get_si(A_vec[0].big_value)==0)
+    {
+        cout << "===========DIV 0===================== " << endl;
+        return false;
+    }
     A_vec2[0] = A_vec[0];
     A_vec2[1] = A_vec[1];
     A_vec2[2] = A_vec[2];
@@ -2192,8 +2199,12 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
                 else
                     A_vec2[k*cols + i] = A_vec2[k*cols + i] - (A_vec2[m*cols + i] * A_vec2[k*cols + m]);
             }
-            if(A_vec2[k*cols + k].value==0)
-                cout << "===========DIV 0===================== " << k << A_vec2[k*cols + k].value << A_vec[k*cols + k].value << endl;
+            //if(A_vec2[k*cols + k].value==0)
+            if(mpz_get_si(A_vec2[k*cols + k].big_value)==0)
+            {
+                cout << "===========DIV 1===================== " << endl;
+                return false;
+            }
           
             A_vec2[i*cols + k] = A_vec2[k*cols + i] / A_vec2[k*cols + k] ;
         }
@@ -2214,8 +2225,12 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
 
     for(int i = rows-1; i >= 0; i--)
     {
-        if(A_vec2[i*cols + i].value==0)
-            cout << "===========DIV 1===================== " << endl;
+        //if(A_vec2[i*cols + i].value==0)
+        if(mpz_get_si(A_vec2[i*cols + i].big_value)==0)
+            {
+            cout << "===========DIV 2===================== " << endl;
+                return false;
+            }
         B_vec2[i] = B_vec2[i] / A_vec2[i*cols + i];
         for(int k = i+1; k < rows; k++)
         {
@@ -2225,21 +2240,15 @@ void solveSystem(vector<FixedPointScalar>& A_vec, vector<FixedPointScalar>& B_ve
 
 
     x = Vec2Mat_f(B_vec2, 6, 1);
-    cout << B_vec2[0].value << endl;
-    cout << B_vec2[1].value << endl;
-    cout << B_vec2[2].value << endl;
-    cout << B_vec2[3].value << endl;
-    cout << B_vec2[4].value << endl;
-    cout << B_vec2[5].value << endl;
-    exit(1);
-    if(cvIsNaN(x.at<float>(0,0)))
-    {
-        cout << "x " << x << endl;
-        cout << "B " << B_vec2[0].value << endl;
-        cout << "B " << B_vec2[0].value_floating << endl;
-    }
+    return true;
+    //if(cvIsNaN(x.at<float>(0,0)))
+    //{
+    //    cout << "x " << x << endl;
+    //    cout << "B " << B_vec2[0].value << endl;
+    //    cout << "B " << B_vec2[0].value_floating << endl;
+    //}
 }
-*/
+
 /*
 static
 bool solveSystem(const Mat& AtA, const Mat& AtB, double detThreshold, Mat& x)
@@ -2303,9 +2312,42 @@ void computeProjectiveMatrix(const Mat& ksi, Mat& Rt)
 
     Mat R = Rt(Rect(0,0,3,3));
     //Mat rvec = ksi.rowRange(0,3);
-    Mat rvec = ksi_32.rowRange(0,3);
 
-    Rodrigues(rvec, R);
+    //Mat rvec = ksi_32.rowRange(0,3);
+    //Rodrigues(rvec, R);
+    Point3f r;
+    r.x = ksi_32.at<float>(0);
+    r.y = ksi_32.at<float>(1);
+    r.z = ksi_32.at<float>(2);
+    float theta = norm(r);
+    float c = cos(theta);
+    float s = sin(theta);
+    float c1 = 1. - c;
+    float itheta = theta ? 1./theta : 0.;
+    
+    r *= itheta;
+    
+    Matx33f rrt( r.x*r.x, r.x*r.y, r.x*r.z, r.x*r.y, r.y*r.y, r.y*r.z, r.x*r.z, r.y*r.z, r.z*r.z );
+    Matx33f r_x(    0, -r.z,  r.y,
+                  r.z,    0, -r.x,
+                 -r.y,  r.x,    0 );
+    
+    // R = cos(theta)*I + (1 - cos(theta))*r*rT + sin(theta)*[r_x]
+    Matx33f R_pre = c*Matx33f::eye() + c1*rrt + s*r_x;
+    R = Mat(R_pre);
+    Rt.at<float>(0,0) = R.at<float>(0,0);
+    Rt.at<float>(0,1) = R.at<float>(0,1);
+    Rt.at<float>(0,2) = R.at<float>(0,2);
+    Rt.at<float>(1,0) = R.at<float>(1,0);
+    Rt.at<float>(1,1) = R.at<float>(1,1);
+    Rt.at<float>(1,2) = R.at<float>(1,2);
+    Rt.at<float>(2,0) = R.at<float>(2,0);
+    Rt.at<float>(2,1) = R.at<float>(2,1);
+    Rt.at<float>(2,2) = R.at<float>(2,2);
+    //cout << R_pre <<endl;
+    //cout << R <<endl;
+    //cout << Rt <<endl;
+    //exit(1);
 
     //Rt.at<double>(0,3) = ksi.at<double>(3);
     //Rt.at<double>(1,3) = ksi.at<double>(4);

@@ -8,11 +8,11 @@ using namespace cv;
 FixedPointScalar::FixedPointScalar(
 	FIXP_SCALAR_TYPE value_floating,
 	FixedPointConfig config) :
-	FixedPointType<FIXP_SCALAR_TYPE, FIXP_INT_SCALAR_TYPE>(value_floating, 0, config) {
-        if(cvIsNaN(value_floating))
-           value = 0;
-        else
-	   value = static_cast<FIXP_INT_SCALAR_TYPE>(value_floating * (1LL << config.shift));
+	FixedPointType<FIXP_SCALAR_TYPE, FIXP_INT_SCALAR_TYPE>(value_floating, /*0,*/ config) {
+        //if(cvIsNaN(value_floating))
+        //   value = 0;
+        //else
+        //   value = static_cast<FIXP_INT_SCALAR_TYPE>(value_floating * (1LL << config.shift));
         //mpz_init(big_value);
         mpz_set_si(big_value, static_cast<FIXP_INT_SCALAR_TYPE>(value_floating * (1LL << config.shift)));
 	
@@ -55,7 +55,7 @@ FixedPointScalar::FixedPointScalar(
 	const FixedPointScalar &object): 
 	FixedPointType<FIXP_SCALAR_TYPE, FIXP_INT_SCALAR_TYPE>(object){
 	value_floating = object.value_floating; 
-	value = object.value;
+	//value = object.value;
         mpz_set(big_value, object.big_value);
 	config.sign = object.config.sign;
 	config.bit_width = object.config.bit_width;
@@ -106,10 +106,10 @@ FixedPointVector::FixedPointVector(const FixedPointScalar &_x, const FixedPointS
 {}
 
 void FixedPointScalar::check_bit_width(int op) {
-	//if (!enable_check_bit_width)
-	if (enable_check_bit_width)
+	if (!enable_check_bit_width)
+	//if (enable_check_bit_width)
 		return;
-
+        /*
 	if (config.sign == 0) {
 		//debug
 		//if (value >= (1LL << (config.bit_width)))
@@ -176,8 +176,9 @@ void FixedPointScalar::check_bit_width(int op) {
                 //mpz_clear(max_value);
                 //mpz_clear(min_value);
 	}
+        */
 }
-
+/*
 void FixedPointScalar::set_value(FIXP_INT_SCALAR_TYPE value, FixedPointConfig config){
 	value_floating = FIXP_SCALAR_TYPE(value) / FIXP_SCALAR_TYPE(1LL << config.shift);
 	this->value = value;
@@ -186,7 +187,7 @@ void FixedPointScalar::set_value(FIXP_INT_SCALAR_TYPE value, FixedPointConfig co
 	this->config.shift = config.shift;
 	check_bit_width(02);
 }
-
+*/
 void FixedPointScalar::set_bit_width(int bit_width){
 	this->config.bit_width = bit_width;
 	check_bit_width(03);
@@ -201,7 +202,7 @@ FixedPointScalar& FixedPointScalar::operator= (const FixedPointScalar &object)
 
 	// do the copy
 	value_floating = object.value_floating;
-	value = object.value;
+	//value = object.value;
         ////////mpz_init(big_value);
         mpz_set(big_value, object.big_value);
 	config.sign = object.config.sign;
@@ -218,7 +219,7 @@ FixedPointScalar FixedPointScalar::operator + (const FixedPointScalar &object) {
 	assert(config.shift == object.config.shift);
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = value_floating + object.value_floating;
-	return_object.value = value + object.value;
+	//return_object.value = value + object.value;
         mpz_add(return_object.big_value, big_value, object.big_value);
 	return_object.config.sign = config.sign | object.config.sign;
 	//return_object.config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
@@ -230,7 +231,7 @@ FixedPointScalar FixedPointScalar::operator + (const FixedPointScalar &object) {
 void FixedPointScalar::operator += (const FixedPointScalar &object) {
 	assert(config.shift == object.config.shift);
 	value_floating = value_floating + object.value_floating;
-	value = value + object.value;
+	//value = value + object.value;
         mpz_add(big_value, big_value, object.big_value);
 	config.sign = config.sign | object.config.sign;
 	//config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
@@ -246,7 +247,7 @@ FixedPointScalar FixedPointScalar::operator - (const FixedPointScalar &object) {
 	assert(config.shift == object.config.shift);
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = value_floating - object.value_floating;
-	return_object.value = value - object.value;
+	//return_object.value = value - object.value;
         mpz_sub(return_object.big_value, big_value, object.big_value);
 	return_object.config.sign = 1;
 	//return_object.config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
@@ -258,7 +259,7 @@ FixedPointScalar FixedPointScalar::operator - (const FixedPointScalar &object) {
 void FixedPointScalar::operator -= (const FixedPointScalar &object) {
 	assert(config.shift == object.config.shift);
 	value_floating = value_floating - object.value_floating;
-	value = value - object.value;
+	//value = value - object.value;
         mpz_sub(big_value, big_value, object.big_value);
 	config.sign = 1;
 	//config.bit_width = std::max(config.bit_width, object.config.bit_width) + 1;
@@ -469,7 +470,7 @@ FixedPointScalar FixedPointScalar::sqrt() {
 FixedPointScalar FixedPointScalar::abs() {
 	FixedPointScalar return_object(*this);
 	return_object.value_floating = std::abs(value_floating);
-	return_object.value = std::abs(value);
+	//return_object.value = std::abs(value);
         mpz_abs(return_object.big_value, big_value);
 	//return_object.config.sign = 0;
 	return_object.config.sign = config.sign;
@@ -529,7 +530,7 @@ std::vector<FixedPointScalar> f_Mat2Vec(const Mat& in_mat, FixedPointConfig conf
 
     return out_vec;
 }
-
+/*
 std::vector<FixedPointScalar> i_Mat2Vec(const Mat& in_mat, FixedPointConfig config) {
     int rows = in_mat.rows;
     int cols = in_mat.cols;
@@ -546,7 +547,8 @@ std::vector<FixedPointScalar> i_Mat2Vec(const Mat& in_mat, FixedPointConfig conf
 
     return out_vec;
 }
-
+*/
+/*
 Mat Vec2Mat_d(const std::vector<FixedPointScalar>& in_vec, int rows, int cols) {
 
     Mat out_mat;
@@ -561,7 +563,7 @@ Mat Vec2Mat_d(const std::vector<FixedPointScalar>& in_vec, int rows, int cols) {
 
     return out_mat;
 }
-
+*/
 Mat Vec2Mat_f(const std::vector<FixedPointScalar>& in_vec, int rows, int cols) {
 
     Mat out_mat;
@@ -577,7 +579,7 @@ Mat Vec2Mat_f(const std::vector<FixedPointScalar>& in_vec, int rows, int cols) {
 
     return out_mat;
 }
-
+/*
 Mat Vec2Mat_i(const std::vector<FixedPointScalar>& in_vec, int rows, int cols) {
 
     Mat out_mat;
@@ -592,7 +594,8 @@ Mat Vec2Mat_i(const std::vector<FixedPointScalar>& in_vec, int rows, int cols) {
 
     return out_mat;
 }
-
+*/
+/*
 Mat PVec2Mat_i(const std::vector<FixedPointVector>& in_vec, int rows, int cols) {
 
     Mat out_mat;
@@ -609,7 +612,7 @@ Mat PVec2Mat_i(const std::vector<FixedPointVector>& in_vec, int rows, int cols) 
 
     return out_mat;
 }
-
+*/
 Mat PVec2Mat_f(const std::vector<FixedPointVector>& in_vec, int rows, int cols) {
 
     Mat out_mat;
@@ -621,12 +624,15 @@ Mat PVec2Mat_f(const std::vector<FixedPointVector>& in_vec, int rows, int cols) 
             out_mat.at<Point3f>(r, c).x = temp.x.value_floating;
             out_mat.at<Point3f>(r, c).y = temp.y.value_floating;
             out_mat.at<Point3f>(r, c).z = temp.z.value_floating;
+            //out_mat.at<Point3f>(r, c).x = temp.x.to_floating;
+            //out_mat.at<Point3f>(r, c).y = temp.y.to_floating;
+            //out_mat.at<Point3f>(r, c).z = temp.z.to_floating;
         }
     }
 
     return out_mat;
 }
-
+/*
 std::vector<FixedPointVector> i_PMat2Vec(const Mat& in_mat, FixedPointConfig config) {
     int rows = in_mat.rows;
     int cols = in_mat.cols;
@@ -648,7 +654,7 @@ std::vector<FixedPointVector> i_PMat2Vec(const Mat& in_mat, FixedPointConfig con
 
     return out_vec;
 }
-
+*/
 std::vector<FixedPointVector> f_PMat2Vec(const Mat& in_mat, FixedPointConfig config) {
     int rows = in_mat.rows;
     int cols = in_mat.cols;
@@ -671,6 +677,7 @@ std::vector<FixedPointVector> f_PMat2Vec(const Mat& in_mat, FixedPointConfig con
     return out_vec;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
 FixedPointMatrix::FixedPointMatrix(
 	std::vector<FixedPointScalar> scalar_vector,
 	int rows,
@@ -779,6 +786,7 @@ std::vector<FixedPointScalar> FixedPointMatrix::to_vector() const {
 	}
 	return ret;
 }
+*/
 /*
 FixedPointMatrixP::FixedPointMatrixP(
 	std::vector<FixedPointVector> point_vector,

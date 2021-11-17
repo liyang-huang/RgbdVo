@@ -82,15 +82,15 @@ using namespace cv;
     DEFAULT_MAX_DEPTH()
     {
       //return 4.f; // in meters
-      return 4.f*100; // in meters
-      //return 4.f*5000; // in meters
+      //return 4.f*100; // in meters
+      return 4.f*5000; // in meters
     }
     static inline float
     DEFAULT_MAX_DEPTH_DIFF()
     {
       //return 0.07f; // in meters
-      return 0.07f*100; // in meters
-      //return 0.07f*5000; // in meters
+      //return 0.07f*100; // in meters
+      return 0.07f*5000; // in meters
     }
     static inline float
     DEFAULT_MAX_POINTS_PART()
@@ -102,8 +102,8 @@ using namespace cv;
     DEFAULT_MAX_TRANSLATION()
     {
       //return 0.15f; // in meters
-      return 0.15f*100; // in meters
-      //return 0.15f*5000; // in meters
+      //return 0.15f*100; // in meters
+      return 0.15f*5000; // in meters
     }
     static inline float
     DEFAULT_MAX_ROTATION()

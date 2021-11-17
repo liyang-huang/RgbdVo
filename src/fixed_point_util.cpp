@@ -3,7 +3,16 @@
 #include <iostream>
 #include <gmpxx.h>
 #include <gmp.h>
+
 using namespace cv;
+
+float test_max = 0.0;
+float test_min = 0.0;
+
+void testout(){
+    std::cout << "max_value " << test_max << std::endl;
+    std::cout << "min_value " << test_min << std::endl;
+}
 
 FixedPointScalar::FixedPointScalar(
 	FIXP_SCALAR_TYPE value_floating,
@@ -109,74 +118,91 @@ void FixedPointScalar::check_bit_width(int op) {
 	if (!enable_check_bit_width)
 	//if (enable_check_bit_width)
 		return;
-        /*
+        
 	if (config.sign == 0) {
 		//debug
 		//if (value >= (1LL << (config.bit_width)))
 		//	printf("[FIXP_ERROR] shift (%i) value (%lli) >= 2^(bit_width) (%i)\n", config.shift, value, config.bit_width);
-                if(!(value < (1LL << (config.bit_width))))
+                //if(!(value < (1LL << (config.bit_width))))
+                //{
+                //    std::cout << "liyang value_floating" << value_floating << std::endl;
+                //    std::cout << "liyang shift" << config.shift << std::endl;
+                //    std::cout << "liyang value" << value << std::endl;
+                //    std::cout << "liyang bitwidth" << config.bit_width << std::endl;
+                //    std::cout << "liyang op " << op << std::endl;
+                //    std::cout << "liyang sign " << config.sign << std::endl;
+                //    std::cout << value << std::endl;
+                //    std::cout << (1LL << config.bit_width) << std::endl;
+                //}
+	        //assert(value < (1LL << config.bit_width));
+                mpz_t max_value;
+                mpz_init(max_value);
+	        mpz_set_si(max_value, (int64_t)1);
+                mpz_mul_2exp(max_value, max_value, config.bit_width);
+                int comp0 = mpz_cmp(max_value, big_value); // < max value
+                if(comp0 <= 0)
                 {
-                    std::cout << "liyang value_floating" << value_floating << std::endl;
-                    std::cout << "liyang shift" << config.shift << std::endl;
-                    std::cout << "liyang value" << value << std::endl;
-                    std::cout << "liyang bitwidth" << config.bit_width << std::endl;
+                    std::cout << "liyang value_floating " << value_floating << std::endl;
+                    std::cout << "liyang shift " << config.shift << std::endl;
+                    std::cout << "liyang bitwidth " << config.bit_width << std::endl;
                     std::cout << "liyang op " << op << std::endl;
                     std::cout << "liyang sign " << config.sign << std::endl;
-                    std::cout << value << std::endl;
-                    std::cout << (1LL << config.bit_width) << std::endl;
+                    gmp_printf("%Zd\n", max_value);
+                    gmp_printf("%Zd\n", big_value);
                 }
-	        assert(value < (1LL << config.bit_width));
-                //mpz_t max_value;
-                //mpz_init(max_value);
-	        //mpz_set_si(max_value, (int64_t)1);
-                //mpz_mul_2exp(max_value, max_value, config.bit_width);
-                //int comp0 = mpz_cmp(max_value, big_value); // < max value
-	        //assert(comp0 == 1);
-                //mpz_clear(max_value);
+	        assert(!(comp0 <= 0));
+                mpz_clear(max_value);
 	}
 	else {
 		//debug
 		//if (value >= (1LL << (config.bit_width - 1)) || value < -(1LL << (config.bit_width - 1)))
 		//	printf("[FIXP_ERROR] shift (%i) value (%lli) >= 2^(bit_width - 1) (%i)\n", config.shift, value, config.bit_width - 1);
                 //if(!(value < (1LL << (config.bit_width - 1))))
-                if(!( value >= -(1LL << (config.bit_width - 1)) ) || !(value < (1LL << (config.bit_width - 1)))) 
-                {
-                    std::cout << "NaN " << cvIsNaN(value_floating) << std::endl;
-                    std::cout << "liyang value_floating " << value_floating << std::endl;
-                    std::cout << "liyang shift " << config.shift << std::endl;
-                    std::cout << "liyang value " << value << std::endl;
-                    std::cout << "liyang bitwidth " << config.bit_width << std::endl;
-                    std::cout << "liyang op " << op << std::endl;
-                    std::cout << "liyang sign " << config.sign << std::endl;
-                }
-	        assert(value < (1LL << (config.bit_width - 1))); 
-	        assert(value >= -(1LL << (config.bit_width - 1)));
-                //mpz_t max_value;
-                //mpz_init(max_value);
-	        //mpz_set_si(max_value, (int64_t)1);
-                //mpz_mul_2exp(max_value, max_value, (config.bit_width - 1));
-                //mpz_t min_value;
-                //mpz_init(min_value);
-	        //mpz_set_si(min_value, (int64_t)-1);
-                //mpz_mul_2exp(min_value, min_value, (config.bit_width - 1));
-                //int comp1 = mpz_cmp(max_value, big_value); // < max value
-                //int comp2 = mpz_cmp(min_value, big_value); // >= min value
-                //if(!((comp1 == 1) && (comp2 != 1)))
+                //if(!( value >= -(1LL << (config.bit_width - 1)) ) || !(value < (1LL << (config.bit_width - 1)))) 
                 //{
-                //     std::cout << "value_floating" << value_floating << std::endl;
-                //     gmp_printf("%Zd\n", big_value);
-                //     gmp_printf("%Zd\n", max_value);
-                //     gmp_printf("%Zd\n", min_value);
-                //     std::cout << "comp1" << comp1 << std::endl;
-                //     std::cout << "comp2" << comp2 << std::endl;
-                //     std::cout << "liyang op " << op << std::endl;
+                //    std::cout << "NaN " << cvIsNaN(value_floating) << std::endl;
+                //    std::cout << "liyang value_floating " << value_floating << std::endl;
+                //    std::cout << "liyang shift " << config.shift << std::endl;
+                //    std::cout << "liyang value " << value << std::endl;
+                //    std::cout << "liyang bitwidth " << config.bit_width << std::endl;
+                //    std::cout << "liyang op " << op << std::endl;
+                //    std::cout << "liyang sign " << config.sign << std::endl;
                 //}
-	        //assert(comp1 == 1);
-	        //assert(comp2 != 1);
-                //mpz_clear(max_value);
-                //mpz_clear(min_value);
+	        //assert(value < (1LL << (config.bit_width - 1))); 
+	        //assert(value >= -(1LL << (config.bit_width - 1)));
+                if ((test_max<=value_floating) && !std::isinf(value_floating))
+                    test_max = value_floating;
+                if ((test_min>=value_floating) && !std::isinf(value_floating))
+                    test_min = value_floating;
+                mpz_t max_value;
+                mpz_init(max_value);
+	        mpz_set_si(max_value, (int64_t)1);
+                mpz_mul_2exp(max_value, max_value, (config.bit_width - 1));
+                mpz_t min_value;
+                mpz_init(min_value);
+	        mpz_set_si(min_value, (int64_t)-1);
+                mpz_mul_2exp(min_value, min_value, (config.bit_width - 1));
+                int comp1 = mpz_cmp(max_value, big_value); // < max value
+                int comp2 = mpz_cmp(min_value, big_value); // >= min value
+                if((comp1 <= 0) || (comp2 > 0))
+                {
+                     std::cout << "value_floating " << value_floating << std::endl;
+                     std::cout << "liyang shift " << config.shift << std::endl;
+                     std::cout << "liyang bitwidth " << config.bit_width << std::endl;
+                     std::cout << "liyang sign " << config.sign << std::endl;
+                     std::cout << "liyang op " << op << std::endl;
+                     gmp_printf("%Zd\n", big_value);
+                     gmp_printf("%Zd\n", max_value);
+                     gmp_printf("%Zd\n", min_value);
+                     std::cout << "comp1 " << comp1 << std::endl;
+                     std::cout << "comp2 " << comp2 << std::endl;
+                }
+	        assert(!(comp1 <= 0));
+	        assert(!(comp2 > 0));
+                mpz_clear(max_value);
+                mpz_clear(min_value);
 	}
-        */
+        
 }
 /*
 void FixedPointScalar::set_value(FIXP_INT_SCALAR_TYPE value, FixedPointConfig config){

@@ -10,6 +10,7 @@ typedef float FIXP_SCALAR_TYPE;
 typedef Eigen::Matrix<FIXP_SCALAR_TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> FIXP_MATRIX_TYPE;
 typedef Eigen::Matrix<FIXP_INT_SCALAR_TYPE, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> FIXP_INT_MATRIX_TYPE;
 
+void testout();
 /**
  * Fixed point data configuration.
  * Include sign, bit_width, shift.
